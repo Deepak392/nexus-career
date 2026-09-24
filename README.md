@@ -1,1 +1,1 @@
-# SWE-Project---Campus-Management-System
+# SWE-Project---Jobs and Internship Platform
