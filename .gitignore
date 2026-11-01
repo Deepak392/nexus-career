@@ -2,3 +2,15 @@
 .env
 .env.*
 !.env.example
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code local settings
+.vscode/
