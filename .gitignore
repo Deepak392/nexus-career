@@ -1,11 +1,26 @@
+
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+
+# Python virtual environments
 .venv/
-.packages/
 venv/
+
+# Python cache
 __pycache__/
 *.py[cod]
+*.pyo
+
+# Testing and coverage
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Django generated files
 backend/staticfiles/
 backend/media/
+
+# IDE settings
+.vscode/

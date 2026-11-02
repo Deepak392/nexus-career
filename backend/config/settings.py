@@ -1,35 +1,70 @@
+
+"""
+Django settings for Nexus Career.
+"""
+
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
-
+# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+PROJECT_ROOT = BASE_DIR.parent
+
+# Load environment variables
+load_dotenv(PROJECT_ROOT / ".env")
+
+# Security settings
+DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+
 if not SECRET_KEY:
     if not DEBUG:
-        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY before running with DEBUG disabled.")
+        raise ImproperlyConfigured(
+            "Set DJANGO_SECRET_KEY before running with DEBUG disabled."
+        )
     SECRET_KEY = "unsafe-local-development-key"
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in os.getenv(
+        "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
+    ).split(",")
     if host.strip()
 ]
 
+
+# Application definition
+
+
 INSTALLED_APPS = [
+    # Django built-in applications
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party applications
     "rest_framework",
     "drf_spectacular",
+    "corsheaders",
+
+    # Nexus Career applications
+    "apps.accounts.apps.AccountsConfig",
+    "apps.students.apps.StudentsConfig",
+    "apps.recruiters.apps.RecruitersConfig",
+    "apps.opportunities.apps.OpportunitiesConfig",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -37,7 +72,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "config.urls"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -52,8 +87,14 @@ TEMPLATES = [
         },
     },
 ]
+
+ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
+
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
@@ -89,7 +130,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Nexus Career API",
     "DESCRIPTION": (
-        "Versioned REST API for Nexus Career. Only implemented and registered routes "
+        "Versioned  API for Nexus Career. Only implemented and registered routes "
         "are included. Authentication and the shared error contract are pending team approval."
     ),
     "VERSION": "1.0.0",
