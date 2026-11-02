@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     "apps.students.apps.StudentsConfig",
     
     "apps.recruiters.apps.RecruitersConfig",
+    
+    "apps.opportunities.apps.OpportunitiesConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
