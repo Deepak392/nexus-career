@@ -200,6 +200,14 @@ cp .env.example .env
 Open `.env` and set `POSTGRES_PASSWORD` to any password for your own machine. Never commit `.env`.
 
 3. Build and start the services:
+Use `backend/.env.example` as the list of local environment variables. Django reads
+environment variables directly and does not load `.env` files itself; export those
+values in your shell or use a local environment tool. For local development, set
+`DJANGO_DEBUG=true` and a local-only `DJANGO_SECRET_KEY` before starting Django. When
+`DJANGO_DEBUG` is false, Django refuses to start without an explicit secret key. Do not
+commit secrets.
+
+Run database migrations:
 
 ```
 docker compose up --build
@@ -264,6 +272,7 @@ On Linux / macOS, activate with `source venv/bin/activate`. The database is publ
 ## Testing
 
 Run the backend tests inside the container:
+Run the backend test suite from `backend/` with:
 
 ```
 docker compose exec backend python manage.py test
@@ -274,6 +283,29 @@ or with `make`:
 ```
 make test
 ```
+The tests use PostgreSQL, matching the development database. Start a local PostgreSQL
+instance and set `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, and `PGPORT` before
+running pytest. For a local PowerShell session, also set:
+
+```powershell
+$env:DJANGO_DEBUG = "true"
+$env:DJANGO_SECRET_KEY = "local-development-only"
+```
+
+Django creates and destroys a separate test database; never point test settings at
+production data. The configured PostgreSQL user must be allowed to create databases;
+Django uses a separate `test_<PGDATABASE>` database. Tests are in `backend/tests/`;
+role fixtures are test helpers only and do not define the production role model or
+permissions.
+
+### API schema and interactive docs
+
+Start the backend with `python manage.py runserver` from `backend/`. The OpenAPI schema
+is at `/api/schema/`, Swagger UI at `/api/docs/`, and ReDoc at `/api/redoc/`. API routes
+are versioned under `/api/v1/`. Only registered routes appear in the schema; no product
+endpoints are present until their owning modules implement them. Authentication and the
+shared error contract still require team agreement and are documented as pending in
+[`docs/api-conventions.md`](docs/api-conventions.md).
 
 Continuous integration also runs these checks on every pull request.
 ---

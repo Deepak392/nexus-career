@@ -1,10 +1,8 @@
+
 """
-WSGI config for config project.
+WSGI config for Nexus Career.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
+It exposes the WSGI callable as a module-level variable named application.
 """
 
 import os
