@@ -1,3 +1,4 @@
+
 # Environment variables and secrets
 .env
 .env.*
@@ -7,10 +8,19 @@
 .venv/
 venv/
 
-# Python cache files
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 
-# VS Code local settings
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django generated files
+backend/staticfiles/
+backend/media/
+
+# IDE settings
 .vscode/
