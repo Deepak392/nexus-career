@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Create .env from the example
+        run: cp .env.example .env
+
+      - name: Build and start the stack
+        run: docker compose up -d --build --wait
+
+      - name: Django system check
+        run: docker compose exec -T backend python manage.py check
+
+      - name: Check for missing migrations
+        run: docker compose exec -T backend python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: docker compose exec -T backend python manage.py migrate
+
+      - name: Run tests
+        run: docker compose exec -T backend python manage.py test
+
+      - name: Show logs if something failed
+        if: failure()
+        run: docker compose logs
+
+      - name: Shut down
+        if: always()
+        run: docker compose down -v
