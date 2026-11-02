@@ -168,95 +168,114 @@ Individual Django applications follow a consistent internal structure containing
 
 Ensure the following are installed:
 
-* Python
-* Node.js
-* PostgreSQL
-* Docker
-* Git
+- Git
+- Docker Desktop (includes Docker Compose)
+- `make` (optional, see below)
 
-### Clone the Repository
+Python and PostgreSQL do not need to be installed on your machine when you use Docker.
 
-```bash
+### Quick Start (Docker)
+
+1. Clone the repository:
+
+```
 git clone https://github.com/Deepak392/nexus-career.git
 cd nexus-career
 ```
 
-### Backend Setup
+2. Create your local environment file:
 
-```bash
-cd backend
+**Windows (PowerShell)**
+
 ```
-
-Create and activate a virtual environment:
-
-**Windows**
-
-```powershell
-python -m venv venv
-venv\Scripts\activate
+copy .env.example .env
 ```
 
 **Linux / macOS**
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
+```
+cp .env.example .env
 ```
 
-Install development dependencies:
+Open `.env` and set `POSTGRES_PASSWORD` to any password for your own machine. Never commit `.env`.
 
-```bash
-pip install -r requirements/development.txt
+3. Build and start the services:
+
 ```
-
-Run database migrations:
-
-```bash
-python manage.py migrate
-```
-
-Start the development server:
-
-```bash
-python manage.py runserver
-```
-
----
-
-## Docker
-
-The project includes Docker configuration for running the application in a containerized development environment.
-
-Build and start the services:
-
-```bash
 docker compose up --build
+```
+
+4. In a second terminal, apply the database migrations:
+
+```
+docker compose exec backend python manage.py migrate
+```
+
+5. Open http://localhost:8000
+
+### Docker Commands
+
+Stop the services:
+
+```
+docker compose down
 ```
 
 Run in detached mode:
 
-```bash
+```
 docker compose up -d
 ```
 
-Stop the services:
+### Make Shortcuts (optional)
 
-```bash
-docker compose down
+| Command | What it does |
+|---|---|
+| `make up` | Build and start everything |
+| `make down` | Stop and remove the containers (data is kept) |
+| `make build` | Rebuild the images |
+| `make logs` | Follow live logs |
+| `make ps` | Show running containers |
+| `make migrate` | Apply database migrations |
+| `make makemigrations` | Create new migrations |
+| `make shell` | Open the Django shell |
+| `make test` | Run the tests |
+| `make clean` | Stop everything and **delete the local database** |
+
+On Windows, install `make` with `winget install ezwinports.make`, then open a new terminal.
+
+### Running Django Without Docker (optional)
+
+Start only the database in Docker, then run Django on your machine:
+
+```
+docker compose up -d db
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 ```
 
+On Linux / macOS, activate with `source venv/bin/activate`. The database is published on `127.0.0.1:5433`.
 ---
 
 ## Testing
 
-Run the backend test suite with:
+Run the backend tests inside the container:
 
-```bash
-pytest
+```
+docker compose exec backend python manage.py test
 ```
 
-Tests are organized by application functionality, including models, services, APIs, and permissions.
+or with `make`:
 
+```
+make test
+```
+
+Continuous integration also runs these checks on every pull request.
 ---
 
 ## Development Workflow
@@ -314,15 +333,19 @@ Workflow definitions are maintained under:
 
 ## Environment Configuration
 
-Environment-specific configuration should not be committed to the repository.
+Environment-specific configuration is not committed to the repository.
 
-Create a local environment file based on:
+Create your local file from the template in the **project root**:
 
-```text
-backend/.env.example
+```
+.env.example  ->  .env
 ```
 
-Sensitive credentials, database passwords, API keys, and other secrets must remain outside version control.
+| Variable | Purpose |
+|---|---|
+| `POSTGRES_PASSWORD` | Database password (required) |
+
+Sensitive credentials, database passwords, API keys and other secrets must remain outside version control.
 
 ---
 
