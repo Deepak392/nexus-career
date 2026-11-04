@@ -7,3 +7,4 @@ python-dotenv==1.2.4
 sqlparse==0.6.0
 tzdata==2026.6
 django-cors-headers
+drf-spectacular==0.30.0
