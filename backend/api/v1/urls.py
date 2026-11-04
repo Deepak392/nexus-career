@@ -1,5 +1,6 @@
-"""Versioned API route registry. Feature apps register their real routes here."""
+from django.urls import include, path
 
-from django.urls import path
-
-urlpatterns = []
+urlpatterns = [
+    path("students/", include("apps.students.urls")),
+    path("alumni/", include("apps.alumni.urls")),
+]
