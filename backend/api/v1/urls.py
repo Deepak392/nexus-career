@@ -10,6 +10,8 @@ from apps.accounts.views import (
     MeView,
     LogoutView,
 )
+from apps.alumni.views import AlumniVerificationView
+from apps.recruiters.views import RecruiterVerificationView
 
 
 urlpatterns = [
@@ -40,7 +42,19 @@ urlpatterns = [
         name="account-logout",
     ),
 
-    # Student & Alumni routes (Nayana)
+    # IPC Administration & Verification routes (Anji S2 R1)
+    path(
+        "admin/recruiters/<int:id>/verify/",
+        RecruiterVerificationView.as_view(),
+        name="admin-recruiter-verify",
+    ),
+    path(
+        "admin/alumni/<int:id>/verify/",
+        AlumniVerificationView.as_view(),
+        name="admin-alumni-verify",
+    ),
+
+    # Student & Alumni profile routes (Nayana)
     path("students/", include("apps.students.urls")),
     path("alumni/", include("apps.alumni.urls")),
 ]

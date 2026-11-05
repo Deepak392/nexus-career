@@ -24,12 +24,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         normalized_email = value.strip().lower()
-        allowed_domain = "@gmail.com"
+        allowed_domains = ("@scds.saiuniversity.edu.in", "@gmail.com")
 
-        if not normalized_email.endswith(allowed_domain):
+        if not any(normalized_email.endswith(domain) for domain in allowed_domains):
             raise serializers.ValidationError(
                 "Student registration requires an email address "
-                "ending with @gmail.com"
+                "ending with @scds.saiuniversity.edu.in or @gmail.com"
             )
 
         if User.objects.filter(email__iexact=normalized_email).exists():

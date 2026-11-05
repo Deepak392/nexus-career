@@ -39,7 +39,8 @@ def test_api_schema_is_generated_from_registered_routes(client):
     schema = yaml.safe_load(response.content)
     assert schema["openapi"].startswith("3.")
     assert schema["info"]["title"] == "Nexus Career API"
-    assert schema["paths"] == {}
+    assert isinstance(schema["paths"], dict)
+    assert len(schema["paths"]) > 0
 
 
 @pytest.mark.parametrize("name", ["swagger-ui", "redoc"])
