@@ -1,5 +1,46 @@
-"""Versioned API route registry. Feature apps register their real routes here."""
 
 from django.urls import path
 
-urlpatterns = []
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
+from apps.accounts.views import (
+    RegisterView,
+    MeView,
+    LogoutView,
+)
+
+
+urlpatterns = [
+    path(
+        "auth/register/",
+        RegisterView.as_view(),
+        name="account-register",
+    ),
+
+    path(
+        "auth/login/",
+        TokenObtainPairView.as_view(),
+        name="token-obtain-pair",
+    ),
+
+    path(
+        "auth/refresh/",
+        TokenRefreshView.as_view(),
+        name="token-refresh",
+    ),
+
+    path(
+        "auth/me/",
+        MeView.as_view(),
+        name="account-profile",
+    ),
+
+    path(
+        "auth/logout/",
+        LogoutView.as_view(),
+        name="account-logout",
+    ),
+]
