@@ -56,6 +56,21 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(recruiter.role, User.Role.RECRUITER)
         self.assertEqual(response.data["role"], User.Role.RECRUITER)
 
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "username": recruiter.username,
+                "password": "AnotherSecurePassword123!X",
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login_response.data['access']}"
+        )
+        profile_response = self.client.get("/api/v1/auth/me/")
+        self.assertEqual(profile_response.data["role"], User.Role.RECRUITER)
+
     def test_alumni_registration_creates_pending_profile(self):
         with self.settings(MEDIA_ROOT="/tmp/nexus-career-test-media"):
             proof = SimpleUploadedFile(
@@ -96,6 +111,21 @@ class AuthenticationTests(APITestCase):
             "graduation-certificate",
             profile.graduation_proof.name,
         )
+
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "username": alumni.username,
+                "password": "AnotherSecurePassword123!X",
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login_response.data['access']}"
+        )
+        profile_response = self.client.get("/api/v1/auth/me/")
+        self.assertEqual(profile_response.data["role"], User.Role.ALUMNI)
 
     def test_alumni_registration_requires_graduation_proof(self):
         response = self.client.post(
