@@ -1,22 +1,63 @@
-
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
-import { getApiErrorMessage } from "../services/auth";
+import {
+  getApiErrorMessage,
+  type LoginRole,
+} from "../services/auth";
 import "./AuthPages.css";
+
+const accountTypes: {
+  role: LoginRole;
+  label: string;
+  description: string;
+}[] = [
+  {
+    role: "STUDENT",
+    label: "Student",
+    description: "University student",
+  },
+  {
+    role: "ALUMNI",
+    label: "Alumni",
+    description: "Graduate of the university",
+  },
+  {
+    role: "RECRUITER",
+    label: "Recruiter",
+    description: "Hiring for an organization",
+  },
+];
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [selectedRole, setSelectedRole] = useState<LoginRole>("STUDENT");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [department, setDepartment] = useState("");
+  const [degreeProgramme, setDegreeProgramme] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
+  const [graduationProof, setGraduationProof] = useState<File | null>(null);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const emailLabel = selectedRole === "STUDENT"
+    ? "University email"
+    : selectedRole === "ALUMNI"
+      ? "Personal or alumni email"
+      : "Work email";
+
+  const emailPlaceholder = selectedRole === "STUDENT"
+    ? "yourname@university.edu"
+    : selectedRole === "ALUMNI"
+      ? "you@example.com"
+      : "you@company.com";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,11 +68,35 @@ export default function RegisterPage() {
       return;
     }
 
+    if (selectedRole === "ALUMNI" && !graduationProof) {
+      setError("Upload your graduation proof to continue.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await register(username.trim(), email.trim(), password);
-      navigate("/", { replace: true });
+      await register(
+        username.trim(),
+        email.trim(),
+        password,
+        selectedRole,
+        selectedRole === "ALUMNI"
+          ? {
+              department: department.trim(),
+              degree_programme: degreeProgramme.trim(),
+              graduation_year: Number(graduationYear),
+              graduation_proof: graduationProof as File,
+            }
+          : undefined
+      );
+
+      const destination = selectedRole === "RECRUITER"
+        ? "/recruiter"
+        : selectedRole === "STUDENT"
+          ? "/profile"
+          : "/";
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -49,21 +114,63 @@ export default function RegisterPage() {
 
         <h1>Create your account</h1>
         <p className="auth-subtitle">
-          Join Nexus Career and explore opportunities.
+          Select the account type that matches how you will use Nexus Career.
         </p>
 
-        <div className="auth-info">
-          Student registration is currently enabled.
-          Use your authorized university email address.
-        </div>
-
-        {error && (
-          <div className="auth-error" role="alert">
-            {error}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit}>
+          <fieldset className="auth-role-fieldset" disabled={loading}>
+            <legend>Register as</legend>
+            <div className="auth-role-options">
+              {accountTypes.map((accountType) => (
+                <button
+                  key={accountType.role}
+                  className={
+                    selectedRole === accountType.role
+                      ? "auth-role-option selected"
+                      : "auth-role-option"
+                  }
+                  type="button"
+                  aria-pressed={selectedRole === accountType.role}
+                  onClick={() => {
+                    setSelectedRole(accountType.role);
+                    setError("");
+                  }}
+                >
+                  <span className="auth-role-label">{accountType.label}</span>
+                  <span className="auth-role-description">{accountType.description}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          {selectedRole === "STUDENT" && (
+            <div className="auth-info">
+              Use your university-approved email address. Student registration
+              is restricted to the configured university email domain.
+            </div>
+          )}
+
+          {selectedRole === "ALUMNI" && (
+            <div className="auth-info">
+              Alumni registration requires your academic details and a PDF
+              proof of graduation. Your alumni profile will remain pending
+              until it is reviewed.
+            </div>
+          )}
+
+          {selectedRole === "RECRUITER" && (
+            <div className="auth-info">
+              After registering, create your company profile. The IPC must
+              verify the company before you can submit opportunities.
+            </div>
+          )}
+
+          {error && (
+            <div className="auth-error" role="alert">
+              {error}
+            </div>
+          )}
+
           <label htmlFor="username">Username</label>
           <input
             id="username"
@@ -76,16 +183,75 @@ export default function RegisterPage() {
             minLength={3}
           />
 
-          <label htmlFor="email">University email</label>
+          <label htmlFor="email">{emailLabel}</label>
           <input
             id="email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="yourname@university.edu"
+            placeholder={emailPlaceholder}
             autoComplete="email"
             required
           />
+
+          {selectedRole === "ALUMNI" && (
+            <>
+              <div className="auth-registration-grid">
+                <div>
+                  <label htmlFor="department">Department</label>
+                  <input
+                    id="department"
+                    type="text"
+                    value={department}
+                    onChange={(event) => setDepartment(event.target.value)}
+                    placeholder="Computer Science"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="degree-programme">Degree programme</label>
+                  <input
+                    id="degree-programme"
+                    type="text"
+                    value={degreeProgramme}
+                    onChange={(event) => setDegreeProgramme(event.target.value)}
+                    placeholder="B.Tech"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+              </div>
+
+              <label htmlFor="graduation-year">Graduation year</label>
+              <input
+                id="graduation-year"
+                type="number"
+                min="1900"
+                max={new Date().getFullYear()}
+                step="1"
+                value={graduationYear}
+                onChange={(event) => setGraduationYear(event.target.value)}
+                placeholder="2024"
+                required
+              />
+
+              <label htmlFor="graduation-proof">Proof of graduation (PDF, max 5 MB)</label>
+              <input
+                id="graduation-proof"
+                type="file"
+                accept="application/pdf,.pdf"
+                required
+                onChange={(event) => {
+                  setGraduationProof(event.target.files?.[0] ?? null);
+                  setError("");
+                }}
+              />
+              {graduationProof && (
+                <p className="auth-file-name">Selected: {graduationProof.name}</p>
+              )}
+            </>
+          )}
 
           <label htmlFor="register-password">Password</label>
           <input
@@ -115,7 +281,7 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
           >
-            {loading ? "Creating account..." : "Create account"}
+            {loading ? "Creating account..." : `Create ${accountTypes.find((item) => item.role === selectedRole)?.label} account`}
           </button>
         </form>
 
