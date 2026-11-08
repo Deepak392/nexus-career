@@ -1,5 +1,7 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -26,6 +28,14 @@ class PendingCompanyListView(generics.ListAPIView):
 class CompanyVerifyView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsIPCAdmin]
 
+    @extend_schema(request=None, responses=CompanyProfileSerializer)
+    @transaction.atomic
+    @extend_schema(request=RejectionReasonSerializer, responses=CompanyProfileSerializer)
+    @transaction.atomic
+    @extend_schema(request=None, responses=OpportunitySerializer)
+    @transaction.atomic
+    @extend_schema(request=RejectionReasonSerializer, responses=OpportunitySerializer)
+    @transaction.atomic
     def post(self, request, pk):
         company = get_object_or_404(Company, pk=pk)
         if company.verification_status == Company.VerificationStatus.VERIFIED:

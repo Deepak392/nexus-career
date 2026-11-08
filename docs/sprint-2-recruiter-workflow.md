@@ -63,3 +63,23 @@ Company records store verification status, reviewer, verification timestamp and 
 - Full eligibility evaluation against student profiles.
 - Application submission/review workflow.
 - Email notifications.
+
+
+## Student-facing discovery integration
+
+The student opportunities page now consumes the public Django API instead of the demo mock data.
+
+Public endpoint:
+- GET /api/v1/opportunities/
+- GET /api/v1/opportunities/{id}/
+
+Supported query parameters:
+- search: matches opportunity title, description, company name, location and required skills
+- opportunity_type: JOB or INTERNSHIP
+- work_mode: ONSITE, HYBRID or REMOTE
+- location: case-insensitive partial location match
+- application_method: PLATFORM or EXTERNAL
+- ordering: newest, deadline or title
+- page and page_size: server-side pagination
+
+Only published opportunities with future application deadlines are returned. Student eligibility assessment is not implied by publication; automated profile matching remains a separate feature.

@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -24,6 +25,7 @@ class CompanyProfileView(APIView):
         except RecruiterProfile.DoesNotExist:
             return None
 
+    @extend_schema(responses=CompanyProfileSerializer)
     def get(self, request):
         profile = self.get_profile(request.user)
         if profile is None:
@@ -33,6 +35,7 @@ class CompanyProfileView(APIView):
             )
         return Response(CompanyProfileSerializer(profile.company).data)
 
+    @extend_schema(request=CompanyProfileSerializer, responses={201: CompanyProfileSerializer})
     @transaction.atomic
     def post(self, request):
         if self.get_profile(request.user) is not None:
@@ -61,6 +64,7 @@ class CompanyProfileView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(request=CompanyProfileSerializer, responses=CompanyProfileSerializer)
     @transaction.atomic
     def patch(self, request):
         profile = self.get_profile(request.user)
@@ -159,6 +163,7 @@ class RecruiterOpportunityViewSet(viewsets.ModelViewSet):
             serializer.save()
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def submit(self, request, pk=None):
         opportunity = self.get_object()
         if opportunity.status not in {
@@ -201,6 +206,7 @@ class RecruiterOpportunityViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(opportunity).data)
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def close(self, request, pk=None):
         opportunity = self.get_object()
         if opportunity.status != Opportunity.Status.PUBLISHED:
@@ -218,6 +224,7 @@ class RecruiterOpportunityViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(opportunity).data)
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def archive(self, request, pk=None):
         allowed = {
             Opportunity.Status.DRAFT,
