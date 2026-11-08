@@ -80,23 +80,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     expectedRole: LoginRole
   ) {
     const loggedInUser = await apiLogin(username, password);
+    const roleLabels: Record<LoginRole, string> = {
+      STUDENT: "student",
+      ALUMNI: "alumni",
+      RECRUITER: "recruiter",
+    };
 
-    if (loggedInUser.role !== expectedRole) {
+    // The selector validates the three portal types shown on the login page.
+    // Privileged accounts keep their existing credential-based login flow.
+    if (
+      loggedInUser.role in roleLabels &&
+      loggedInUser.role !== expectedRole
+    ) {
       await apiLogout();
 
-      const roleLabels: Record<LoginRole, string> = {
-        STUDENT: "student",
-        ALUMNI: "alumni",
-        RECRUITER: "recruiter",
-      };
       const actualRole = roleLabels[loggedInUser.role as LoginRole];
-
-      if (!actualRole) {
-        throw new Error(
-          "This login page supports student, alumni and recruiter accounts. Contact your platform administrator to access an administrator account."
-        );
-      }
-
       const expectedRoleLabel = actualRole[0].toUpperCase() + actualRole.slice(1);
       throw new Error(
         `These credentials belong to a ${actualRole} account. Select "${expectedRoleLabel}" to sign in.`
