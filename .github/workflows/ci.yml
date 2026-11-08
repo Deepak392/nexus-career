@@ -21,7 +21,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Build and start PostgreSQL and Django
-        run: docker compose up -d --build --wait
+        run: docker compose up -d --build --wait db backend
 
       - name: Verify required Python packages
         run: |
