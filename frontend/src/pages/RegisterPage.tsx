@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import {
@@ -33,8 +33,11 @@ const accountTypes: {
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
-
-  const [selectedRole, setSelectedRole] = useState<LoginRole>("STUDENT");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedRole, setSelectedRole] = useState<LoginRole>(() => {
+    const requestedRole = searchParams.get("role");
+    return accountTypes.find((accountType) => accountType.role === requestedRole)?.role ?? "STUDENT";
+  });
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -142,6 +145,7 @@ export default function RegisterPage() {
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
                     setSelectedRole(accountType.role);
+                    setSearchParams({ role: accountType.role }, { replace: true });
                     setError("");
                   }}
                 >
