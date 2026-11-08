@@ -1,7 +1,7 @@
 asgiref==3.13.0
 Django==5.2.18
 djangorestframework==3.18.3
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.11
 python-dotenv==1.2.4
 sqlparse==0.6.0
 tzdata==2026.6
