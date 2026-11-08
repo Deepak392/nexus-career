@@ -45,7 +45,15 @@ export default function IpcDashboardPage() {
   }
 
   useEffect(() => {
-    void loadQueues();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        void loadQueues();
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [loadQueues]);
 
   async function performAction(

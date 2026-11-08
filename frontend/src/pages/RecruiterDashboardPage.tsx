@@ -186,7 +186,15 @@ export default function RecruiterDashboardPage() {
   }
 
   useEffect(() => {
-    void loadWorkspace();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        void loadWorkspace();
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [loadWorkspace]);
 
   async function handleCompanySubmit(event: FormEvent<HTMLFormElement>) {
