@@ -192,24 +192,19 @@ export async function register(
   role: LoginRole,
   alumniDetails?: AlumniRegistrationDetails
 ): Promise<AuthUser> {
-  const formData = new FormData();
-  formData.append("username", username);
-  formData.append("email", email);
-  formData.append("password", password);
-  formData.append("role", role);
-
-  if (role === "ALUMNI") {
-    if (!alumniDetails) {
-      throw new Error("Alumni registration requires graduation details.");
-    }
-    formData.append("department", alumniDetails.department);
-    formData.append("degree_programme", alumniDetails.degree_programme);
-    formData.append("graduation_year", String(alumniDetails.graduation_year));
+  if (role === "ALUMNI" && !alumniDetails) {
+    throw new Error("Alumni registration requires graduation details.");
   }
 
   const createdUser = await apiRequest<AuthUser>("/auth/register/", {
     method: "POST",
-    body: formData,
+    body: JSON.stringify({
+      username,
+      email,
+      password,
+      role,
+      ...(role === "ALUMNI" ? alumniDetails : {}),
+    }),
   });
 
   if (createdUser.role !== role) {
