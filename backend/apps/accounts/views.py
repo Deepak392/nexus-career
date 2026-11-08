@@ -1,4 +1,4 @@
-
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -7,12 +7,20 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer, UserProfileSerializer
+from .serializers import (
+    LogoutSerializer,
+    RegisterSerializer,
+    UserProfileSerializer,
+)
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=RegisterSerializer,
+        responses={201: UserProfileSerializer},
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -28,6 +36,7 @@ class RegisterView(APIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=UserProfileSerializer)
     def get(self, request):
         serializer = UserProfileSerializer(request.user)
 
@@ -40,18 +49,21 @@ class MeView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=LogoutSerializer,
+        responses={
+            205: OpenApiResponse(description="Logout successful."),
+            400: OpenApiResponse(description="Missing, invalid, or expired token."),
+            403: OpenApiResponse(description="Token belongs to another user."),
+        },
+    )
     def post(self, request):
-        raw_refresh_token = request.data.get("refresh")
-
-        if not raw_refresh_token:
-            return Response(
-                {"detail": "Refresh token is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        raw_refresh_token = serializer.validated_data["refresh"]
 
         try:
             token = RefreshToken(raw_refresh_token)
-
             token_user_id = token.payload.get("user_id")
 
             if str(token_user_id) != str(request.user.pk):

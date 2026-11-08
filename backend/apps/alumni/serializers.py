@@ -4,10 +4,8 @@ from .models import AlumniProfile
 
 
 class AlumniProfileSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AlumniProfile
-
         fields = [
             "id",
             "department",
@@ -21,15 +19,22 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
         read_only_fields = [
             "id",
             "verification_status",
             "created_at",
             "updated_at",
         ]
-class AlumniSearchSerializer(serializers.ModelSerializer):
 
+    def validate_graduation_year(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Graduation year must be greater than zero."
+            )
+        return value
+
+
+class AlumniSearchSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -46,11 +51,5 @@ class AlumniSearchSerializer(serializers.ModelSerializer):
             "is_open_to_referrals",
         ]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return obj.user.get_full_name() or obj.user.username
-    def validate_graduation_year(self, value):
-        if value <= 0:
-            raise serializers.ValidationError(
-                "Graduation year must be greater than zero."
-            )
-        return value

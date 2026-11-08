@@ -1,34 +1,32 @@
-
 """
 Django settings for Nexus Career.
 """
 
 import os
-from pathlib import Path
-
 from datetime import timedelta
+from pathlib import Path
 
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
 
-# Load environment variables
+# Load the project-level environment file for local development.
 load_dotenv(PROJECT_ROOT / ".env")
 
 # Security settings
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-
 if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured(
             "Set DJANGO_SECRET_KEY before running with DEBUG disabled."
         )
-    SECRET_KEY = "unsafe-local-development-key"
+    SECRET_KEY = get_random_secret_key()
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -38,13 +36,18 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:3000",
+    ).split(",")
+    if origin.strip()
+]
 
 # Application definition
-
-
 INSTALLED_APPS = [
     # Django built-in applications
-    
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -63,7 +66,7 @@ INSTALLED_APPS = [
     "apps.students.apps.StudentsConfig",
     "apps.recruiters.apps.RecruitersConfig",
     "apps.opportunities.apps.OpportunitiesConfig",
-    "apps.alumni",
+    "apps.alumni.apps.AlumniConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -78,7 +81,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 TEMPLATES = [
     {
@@ -99,10 +101,7 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -131,9 +130,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-
     "DEFAULT_PAGINATION_CLASS": "api.core.pagination.TeamPageNumberPagination",
-
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
@@ -143,7 +140,6 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
@@ -151,8 +147,8 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Nexus Career API",
     "DESCRIPTION": (
-        "Versioned  API for Nexus Career. Only implemented and registered routes "
-        "are included. Authentication and the shared error contract are pending team approval."
+        "Versioned REST API for Nexus Career. Only implemented and registered "
+        "routes are included."
     ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
