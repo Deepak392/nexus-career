@@ -47,6 +47,15 @@ class StudentProfile(models.Model):
 
     class Meta:
         db_table = "student_profiles"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(cgpa__gte=0, cgpa__lte=10)
+                    | models.Q(cgpa__isnull=True)
+                ),
+                name="student_cgpa_valid_range",
+            ),
+        ]
 
     @property
     def has_resume(self):
