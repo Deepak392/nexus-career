@@ -322,6 +322,62 @@ class RecruiterOpportunityWorkflowTests(APITestCase):
         self.assertIn(own.pk, ids)
         self.assertNotIn(other.pk, ids)
 
+    def test_end_to_end_company_verification_to_publication(self):
+        self.company.verification_status = Company.VerificationStatus.PENDING
+        self.company.save(update_fields=["verification_status"])
+
+        # IPC verifies the company before recruiter submission.
+        self.client.force_authenticate(user=self.ipc_admin)
+        verify_response = self.client.post(
+            reverse("ipc-company-verify", args=[self.company.pk])
+        )
+        self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+
+        # Recruiter creates a draft and submits it for IPC review.
+        self.client.force_authenticate(user=self.recruiter)
+        create_response = self.client.post(
+            self.url,
+            self.data,
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        opportunity_id = create_response.data["id"]
+
+        submit_response = self.client.post(
+            reverse("recruiter-opportunity-submit", args=[opportunity_id])
+        )
+        self.assertEqual(submit_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            submit_response.data["status"],
+            Opportunity.Status.PENDING_APPROVAL,
+        )
+
+        # IPC approves the pending submission.
+        self.client.force_authenticate(user=self.ipc_admin)
+        pending_response = self.client.get(
+            reverse("ipc-pending-opportunities")
+        )
+        pending_ids = [item["id"] for item in pending_response.data["results"]]
+        self.assertIn(opportunity_id, pending_ids)
+
+        approval_response = self.client.post(
+            reverse("ipc-opportunity-approve", args=[opportunity_id])
+        )
+        self.assertEqual(approval_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            approval_response.data["status"],
+            Opportunity.Status.PUBLISHED,
+        )
+
+        # The approved, unexpired listing becomes visible in student discovery.
+        public_response = self.client.get(
+            reverse("opportunity-list"),
+            {"search": "Backend Software Engineer Intern"},
+        )
+        self.assertEqual(public_response.status_code, status.HTTP_200_OK)
+        public_ids = [item["id"] for item in public_response.data["results"]]
+        self.assertIn(opportunity_id, public_ids)
+
     def test_ipc_admin_can_approve_pending_opportunity(self):
         opportunity = self.create_opportunity()
         opportunity.status = Opportunity.Status.PENDING_APPROVAL
