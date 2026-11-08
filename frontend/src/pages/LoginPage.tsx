@@ -1,16 +1,22 @@
-
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
-import { getApiErrorMessage } from "../services/auth";
+import { getApiErrorMessage, type LoginRole } from "../services/auth";
 import "./AuthPages.css";
+
+const accountTypes: { role: LoginRole; label: string; description: string }[] = [
+  { role: "STUDENT", label: "Student", description: "Explore jobs and internships" },
+  { role: "ALUMNI", label: "Alumni", description: "Support students and share referrals" },
+  { role: "RECRUITER", label: "Recruiter", description: "Manage company opportunities" },
+];
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [selectedRole, setSelectedRole] = useState<LoginRole>("STUDENT");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +34,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(username.trim(), password);
+      await login(username.trim(), password, selectedRole);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -47,16 +53,41 @@ export default function LoginPage() {
 
         <h1>Welcome back</h1>
         <p className="auth-subtitle">
-          Sign in to continue to your career dashboard.
+          Choose your account type and sign in to continue.
         </p>
 
-        {error && (
-          <div className="auth-error" role="alert">
-            {error}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit}>
+          <fieldset className="auth-role-fieldset" disabled={loading}>
+            <legend>Continue as</legend>
+            <div className="auth-role-options">
+              {accountTypes.map((accountType) => (
+                <button
+                  key={accountType.role}
+                  className={
+                    selectedRole === accountType.role
+                      ? "auth-role-option selected"
+                      : "auth-role-option"
+                  }
+                  type="button"
+                  aria-pressed={selectedRole === accountType.role}
+                  onClick={() => {
+                    setSelectedRole(accountType.role);
+                    setError("");
+                  }}
+                >
+                  <span className="auth-role-label">{accountType.label}</span>
+                  <span className="auth-role-description">{accountType.description}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          {error && (
+            <div className="auth-error" role="alert">
+              {error}
+            </div>
+          )}
+
           <label htmlFor="username">Username</label>
           <input
             id="username"
@@ -84,7 +115,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Signing in..." : `Sign in as ${accountTypes.find((item) => item.role === selectedRole)?.label}`}
           </button>
         </form>
 
