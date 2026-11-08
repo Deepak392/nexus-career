@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                     ("ALUMNI", "Alumni"),
                     ("SYSTEM_ADMIN", "System Administrator"),
                 ],
-                default="SYSTEM_ADMIN",
+                default="STUDENT",
                 max_length=20,
             ),
         ),
