@@ -97,6 +97,62 @@ class RecruiterCompanyAPITests(APITestCase):
         company.refresh_from_db()
         self.assertEqual(company.verification_status, Company.VerificationStatus.PENDING)
 
+    def test_company_edit_returns_published_and_pending_opportunities_to_draft(self):
+        company = Company.objects.create(
+            name="Northstar Technologies",
+            industry="Technology",
+            contact_email="careers@northstar.example.com",
+            verification_status=Company.VerificationStatus.VERIFIED,
+        )
+        RecruiterProfile.objects.create(user=self.recruiter, company=company)
+        published = Opportunity.objects.create(
+            company=company,
+            created_by=self.recruiter,
+            title="Published listing",
+            description="A published listing with enough descriptive detail.",
+            opportunity_type=Opportunity.OpportunityType.JOB,
+            work_mode=Opportunity.WorkMode.REMOTE,
+            location="Remote",
+            application_deadline=timezone.now() + timedelta(days=20),
+            status=Opportunity.Status.PUBLISHED,
+            published_at=timezone.now(),
+            approved_by=self.ipc_admin,
+            approved_at=timezone.now(),
+        )
+        pending = Opportunity.objects.create(
+            company=company,
+            created_by=self.recruiter,
+            title="Pending listing",
+            description="A pending listing with enough descriptive detail.",
+            opportunity_type=Opportunity.OpportunityType.INTERNSHIP,
+            work_mode=Opportunity.WorkMode.HYBRID,
+            location="Chennai",
+            application_deadline=timezone.now() + timedelta(days=20),
+            status=Opportunity.Status.PENDING_APPROVAL,
+        )
+
+        self.client.force_authenticate(user=self.recruiter)
+        response = self.client.patch(
+            self.url,
+            {"contact_phone": "+91-9000000000"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        published.refresh_from_db()
+        pending.refresh_from_db()
+        self.assertEqual(published.status, Opportunity.Status.DRAFT)
+        self.assertEqual(pending.status, Opportunity.Status.DRAFT)
+        self.assertIsNone(published.approved_by)
+        self.assertIsNone(published.approved_at)
+        self.assertIsNone(published.published_at)
+        audit = WorkflowAuditEvent.objects.get(
+            object_type=WorkflowAuditEvent.ObjectType.COMPANY,
+            object_id=company.pk,
+            action=WorkflowAuditEvent.Action.COMPANY_PROFILE_UPDATED,
+        )
+        self.assertEqual(audit.details["opportunities_returned_to_draft"], 2)
+
     def test_ipc_admin_can_verify_company(self):
         company = Company.objects.create(
             name="Northstar Technologies", industry="Technology",

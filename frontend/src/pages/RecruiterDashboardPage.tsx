@@ -208,7 +208,7 @@ export default function RecruiterDashboardPage() {
       setCompanyForm(toCompanyForm(saved));
       setCompanyFormOpen(false);
       setNotice(company
-        ? "Company details updated. IPC verification is required again."
+        ? "Company details updated. Pending and published listings were returned to drafts until IPC verifies the company again."
         : "Company profile created and sent for IPC verification.");
       await loadWorkspace();
     } catch (err) {

@@ -100,11 +100,28 @@ class CompanyProfileView(APIView):
                 "updated_at",
             ]
         )
+        invalidated_opportunities = Opportunity.objects.filter(
+            company=company,
+            status__in=[
+                Opportunity.Status.PUBLISHED,
+                Opportunity.Status.PENDING_APPROVAL,
+            ],
+        ).update(
+            status=Opportunity.Status.DRAFT,
+            approved_by=None,
+            approved_at=None,
+            published_at=None,
+            rejection_reason="",
+            updated_at=timezone.now(),
+        )
         WorkflowAuditEvent.objects.create(
             actor=request.user,
             object_type=WorkflowAuditEvent.ObjectType.COMPANY,
             object_id=company.pk,
             action=WorkflowAuditEvent.Action.COMPANY_PROFILE_UPDATED,
+            details={
+                "opportunities_returned_to_draft": invalidated_opportunities,
+            },
         )
         return Response(CompanyProfileSerializer(company).data)
 

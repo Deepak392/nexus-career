@@ -10,7 +10,7 @@ SRS assumption A-06 (direct recruiter registration versus IPC invitation) remain
 
 The custom User model is registered in Django admin with role and verification fields. Do not grant Django admin access to external recruiters.
 
-Company verification is separate from email verification. Creating a company profile sets status to PENDING. A recruiter can save draft opportunities but cannot submit until the company is VERIFIED. Editing company information returns it to PENDING.
+Company verification is separate from email verification. Creating a company profile sets status to PENDING. A recruiter can save draft opportunities but cannot submit until the company is VERIFIED. Editing company information returns it to PENDING and returns the company’s pending or published opportunities to DRAFT until IPC verifies the updated details.
 
 ## Recruiter endpoints
 
