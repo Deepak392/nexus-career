@@ -18,37 +18,28 @@ const homeLinks: NavigationLink[] = [
 
 const studentLinks: NavigationLink[] = [
   ...homeLinks,
-  { to: "/saved", label: "My Saved Jobs", icon: "🔖", end: false },
   { to: "/applications", label: "My Applications", icon: "📄", end: false },
   { to: "/notifications", label: "Notifications", icon: "🔔", end: false },
   { to: "/profile", label: "My Profile", icon: "👤", end: false },
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
 ];
 
 const recruiterLinks: NavigationLink[] = [
   { to: "/", label: "Home", icon: "🏠", end: true },
   { to: "/recruiter", label: "Recruiter Dashboard", icon: "🏢", end: false },
   { to: "/opportunities", label: "Browse Opportunities", icon: "💼", end: false },
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
 ];
 
 const ipcAdminLinks: NavigationLink[] = [
   { to: "/", label: "Home", icon: "🏠", end: true },
   { to: "/ipc", label: "IPC Dashboard", icon: "✅", end: false },
   { to: "/opportunities", label: "Browse Opportunities", icon: "💼", end: false },
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
 ];
 
 // Alumni and technical-administration workflows do not have dedicated routes yet.
 // Keep their menus limited to pages that currently exist and are shared.
-const alumniLinks: NavigationLink[] = [
-  ...homeLinks,
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
-];
-
+const alumniLinks: NavigationLink[] = homeLinks;
 const systemAdminLinks: NavigationLink[] = [
   { to: "/", label: "Home", icon: "🏠", end: true },
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
 ];
 
 const navigationByRole: Record<string, NavigationLink[]> = {
@@ -60,10 +51,7 @@ const navigationByRole: Record<string, NavigationLink[]> = {
 };
 
 const guestLinks = homeLinks;
-const fallbackAuthenticatedLinks = [
-  ...homeLinks,
-  { to: "/settings", label: "Settings", icon: "⚙️", end: false },
-];
+const fallbackAuthenticatedLinks = homeLinks;
 
 export default function Layout() {
   const { user, isLoading, logout } = useAuth();
