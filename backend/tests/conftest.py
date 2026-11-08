@@ -1,4 +1,3 @@
-
 from itertools import count
 
 import pytest
@@ -33,6 +32,7 @@ def user_factory(db):
         **fields,
     ):
         username = username or f"test-user-{next(usernames)}"
+        fields.setdefault("email", f"{username}@example.test")
         fields.setdefault("role", User.Role.STUDENT)
 
         return User.objects.create_user(
@@ -61,12 +61,10 @@ def role_user_factory(user_factory):
             raise ValueError(f"Unknown test role: {role}")
 
         fields.setdefault("role", role_values[role])
-
         user = user_factory(**fields)
 
         group, _ = Group.objects.get_or_create(name=role)
         user.groups.add(group)
-
         return user
 
     return make_role_user
