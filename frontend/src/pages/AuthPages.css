@@ -152,6 +152,27 @@
   opacity: 0.7;
 }
 
+.auth-registration-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auth-registration-grid > div {
+  min-width: 0;
+}
+
+.auth-registration-grid label {
+  display: block;
+}
+
+.auth-file-name {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .auth-submit {
   width: 100%;
   min-height: 46px;
@@ -236,6 +257,10 @@
 
   .auth-role-description {
     text-align: right;
+  }
+
+  .auth-registration-grid {
+    grid-template-columns: 1fr;
   }
 }
 

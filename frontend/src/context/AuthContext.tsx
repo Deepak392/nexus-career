@@ -14,6 +14,7 @@ import {
   getCurrentUser,
   getAccessToken,
   clearAuthTokens,
+  type AlumniRegistrationDetails,
   type AuthUser,
   type LoginRole,
 } from "../services/auth";
@@ -26,7 +27,9 @@ interface AuthContextType {
   register: (
     username: string,
     email: string,
-    password: string
+    password: string,
+    role: LoginRole,
+    alumniDetails?: AlumniRegistrationDetails
   ) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -108,13 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function handleRegister(
     username: string,
     email: string,
-    password: string
+    password: string,
+    role: LoginRole,
+    alumniDetails?: AlumniRegistrationDetails
   ) {
     const registeredUser = await apiRegister(
       username,
       email,
-      password
+      password,
+      role,
+      alumniDetails
     );
+
+    if (registeredUser.role !== role) {
+      await apiLogout();
+      throw new Error("The registered account type did not match your selection.");
+    }
 
     setUser(registeredUser);
   }

@@ -1,7 +1,8 @@
-
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
+
+from apps.alumni.models import AlumniProfile
 
 
 User = get_user_model()
@@ -37,13 +38,126 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(new_user.role, User.Role.STUDENT)
         self.assertTrue(new_user.check_password("AnotherSecurePassword123!X"))
 
-    def test_registration_rejects_invalid_email_domain(self):
+    def test_recruiter_registration_assigns_recruiter_role(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "newrecruiter",
+                "email": "recruiter@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "RECRUITER",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recruiter = User.objects.get(username="newrecruiter")
+        self.assertEqual(recruiter.role, User.Role.RECRUITER)
+        self.assertEqual(response.data["role"], User.Role.RECRUITER)
+
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "username": recruiter.username,
+                "password": "AnotherSecurePassword123!X",
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login_response.data['access']}"
+        )
+        profile_response = self.client.get("/api/v1/auth/me/")
+        self.assertEqual(profile_response.data["role"], User.Role.RECRUITER)
+
+    def test_alumni_registration_creates_pending_profile_without_proof(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "newalumni",
+                "email": "alumni@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "ALUMNI",
+                "department": "Computer Science",
+                "degree_programme": "B.Tech",
+                "graduation_year": "2024",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        alumni = User.objects.get(username="newalumni")
+        profile = AlumniProfile.objects.get(user=alumni)
+
+        self.assertEqual(alumni.role, User.Role.ALUMNI)
+        self.assertEqual(response.data["role"], User.Role.ALUMNI)
+        self.assertEqual(profile.department, "Computer Science")
+        self.assertEqual(profile.degree_programme, "B.Tech")
+        self.assertEqual(profile.graduation_year, 2024)
+        self.assertFalse(profile.graduation_proof)
+        self.assertEqual(
+            profile.verification_status,
+            AlumniProfile.VerificationStatus.PENDING,
+        )
+
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "username": alumni.username,
+                "password": "AnotherSecurePassword123!X",
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login_response.data['access']}"
+        )
+        profile_response = self.client.get("/api/v1/auth/me/")
+        self.assertEqual(profile_response.data["role"], User.Role.ALUMNI)
+
+    def test_alumni_registration_requires_academic_details(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "missingdetails",
+                "email": "missingdetails@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "ALUMNI",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("department", response.data)
+        self.assertIn("degree_programme", response.data)
+        self.assertIn("graduation_year", response.data)
+        self.assertFalse(User.objects.filter(username="missingdetails").exists())
+
+    def test_registration_rejects_privileged_role_assignment(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "selfappointedadmin",
+                "email": "admin@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "IPC_ADMIN",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            User.objects.filter(username="selfappointedadmin").exists()
+        )
+
+    def test_registration_rejects_invalid_student_email_domain(self):
         response = self.client.post(
             "/api/v1/auth/register/",
             {
                 "username": "invalidstudent",
                 "email": "student@example.com",
                 "password": "AnotherSecurePassword123!X",
+                "role": "STUDENT",
             },
             format="json",
         )
