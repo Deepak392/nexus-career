@@ -1,4 +1,3 @@
-
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
   "http://localhost:8000/api/v1"
@@ -17,20 +16,17 @@ interface TokenPair {
   refresh: string;
 }
 
-
 export class ApiError extends Error {
   public readonly payload: unknown;
   public readonly status: number;
 
   constructor(payload: unknown, status: number) {
     super(getApiErrorMessage(payload));
-
     this.name = "ApiError";
     this.payload = payload;
     this.status = status;
   }
 }
-
 
 const ACCESS_KEY = "nexus_access_token";
 const REFRESH_KEY = "nexus_refresh_token";
@@ -54,28 +50,24 @@ export function clearAuthTokens(): void {
 }
 
 export function getApiErrorMessage(payload: unknown): string {
+  if (payload instanceof Error) {
+    return payload.message;
+  }
   if (typeof payload === "string") {
     return payload;
   }
-
   if (payload && typeof payload === "object") {
     const data = payload as Record<string, unknown>;
-
     if (typeof data.detail === "string") {
       return data.detail;
     }
-
     return Object.entries(data)
       .map(([field, value]) => {
-        const message = Array.isArray(value)
-          ? value.join(", ")
-          : String(value);
-
+        const message = Array.isArray(value) ? value.join(", ") : String(value);
         return `${field}: ${message}`;
       })
       .join(" | ");
   }
-
   return "Something went wrong. Please try again.";
 }
 
@@ -84,17 +76,14 @@ async function readResponse<T>(response: Response): Promise<T> {
     response.status === 204 || response.status === 205
       ? null
       : await response.json().catch(() => null);
-
   if (!response.ok) {
     throw new ApiError(data, response.status);
   }
-
   return data as T;
 }
 
 async function refreshAccessToken(): Promise<boolean> {
   const refresh = getRefreshToken();
-
   if (!refresh) {
     return false;
   }
@@ -108,14 +97,11 @@ async function refreshAccessToken(): Promise<boolean> {
       },
       body: JSON.stringify({ refresh }),
     });
-
     if (!response.ok) {
       clearAuthTokens();
       return false;
     }
-
     const tokens = (await response.json()) as TokenPair;
-
     saveTokens(tokens);
     return true;
   } catch {
@@ -131,19 +117,15 @@ async function apiRequest<T>(
   retryOnUnauthorized = true
 ): Promise<T> {
   const headers = new Headers(options.headers);
-
   headers.set("Accept", "application/json");
-
   if (options.body && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
   let response: Response;
-
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
@@ -157,7 +139,6 @@ async function apiRequest<T>(
 
   if (response.status === 401 && token && retryOnUnauthorized) {
     const refreshed = await refreshAccessToken();
-
     if (refreshed) {
       return apiRequest<T>(
         path,
@@ -166,24 +147,28 @@ async function apiRequest<T>(
         false
       );
     }
-
     clearAuthTokens();
   }
-
   return readResponse<T>(response);
 }
 
-export async function login(
-  username: string,
-  password: string
-): Promise<AuthUser> {
+export async function authenticatedRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Please sign in to continue.");
+  }
+  return apiRequest<T>(path, options, token);
+}
+
+export async function login(username: string, password: string): Promise<AuthUser> {
   const tokens = await apiRequest<TokenPair>("/auth/login/", {
     method: "POST",
     body: JSON.stringify({ username, password }),
   });
-
   saveTokens(tokens);
-
   try {
     return await getCurrentUser();
   } catch (error) {
@@ -201,34 +186,26 @@ export async function register(
     method: "POST",
     body: JSON.stringify({ username, email, password }),
   });
-
-  // The current backend registration endpoint creates a student,
-  // but does not return JWT tokens. Log in after successful registration.
   return login(username, password);
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {
   if (!getAccessToken() && getRefreshToken()) {
     const refreshed = await refreshAccessToken();
-
     if (!refreshed) {
       throw new Error("Your session has expired. Please log in again.");
     }
   }
-
   const token = getAccessToken();
-
   if (!token) {
     throw new Error("You are not logged in.");
   }
-
   return apiRequest<AuthUser>("/auth/me/", {}, token);
 }
 
 export async function logout(): Promise<void> {
   const access = getAccessToken();
   const refresh = getRefreshToken();
-
   try {
     if (access && refresh) {
       await apiRequest(
