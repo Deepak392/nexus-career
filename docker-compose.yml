@@ -20,7 +20,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # ===== DevOps =====
+
+
+# ===== DevOps =====
+  
   backend:
     build: ./backend
     command: python manage.py runserver 0.0.0.0:8000

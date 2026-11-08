@@ -6,6 +6,8 @@ Django settings for Nexus Career.
 import os
 from pathlib import Path
 
+from datetime import timedelta
+
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
@@ -42,6 +44,7 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     # Django built-in applications
+    
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -53,13 +56,17 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "corsheaders",
+    "rest_framework_simplejwt.token_blacklist",
 
     # Nexus Career applications
     "apps.accounts.apps.AccountsConfig",
     "apps.students.apps.StudentsConfig",
     "apps.recruiters.apps.RecruitersConfig",
     "apps.opportunities.apps.OpportunitiesConfig",
+    "apps.alumni",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -124,7 +131,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
     "DEFAULT_PAGINATION_CLASS": "api.core.pagination.TeamPageNumberPagination",
+
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 SPECTACULAR_SETTINGS = {

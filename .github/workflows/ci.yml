@@ -20,6 +20,11 @@ jobs:
       - name: Build and start the stack
         run: docker compose up -d --build --wait
 
+      - name: Verify Python dependencies
+        run: |
+          docker compose exec -T backend python -m pip show drf-spectacular
+          docker compose exec -T backend python -c "import drf_spectacular; print('drf-spectacular installed successfully')"
+      
       - name: Django system check
         run: docker compose exec -T backend python manage.py check
 
