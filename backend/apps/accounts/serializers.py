@@ -25,7 +25,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     )
     password = serializers.CharField(
         write_only=True,
-        validators=[],
+        validators=[validate_password],
         trim_whitespace=False,
     )
     email = serializers.EmailField(
@@ -69,10 +69,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "graduation_proof",
         ]
         read_only_fields = ["id"]
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
 
     def validate_email(self, value):
         normalized_email = value.strip().lower()
