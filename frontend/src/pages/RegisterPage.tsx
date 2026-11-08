@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const [graduationProof, setGraduationProof] = useState<File | null>(null);
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const emailLabel = selectedRole === "STUDENT"
@@ -91,12 +92,15 @@ export default function RegisterPage() {
           : undefined
       );
 
-      const destination = selectedRole === "RECRUITER"
-        ? "/recruiter"
-        : selectedRole === "STUDENT"
-          ? "/profile"
-          : "/";
-      navigate(destination, { replace: true });
+      if (selectedRole === "ALUMNI") {
+        setSuccess(
+          "Your alumni account has been created. Your graduation proof is awaiting review. " +
+          "Your profile will appear in alumni search only after it has been verified."
+        );
+      } else {
+        const destination = selectedRole === "RECRUITER" ? "/recruiter" : "/profile";
+        navigate(destination, { replace: true });
+      }
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -117,7 +121,19 @@ export default function RegisterPage() {
           Select the account type that matches how you will use Nexus Career.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        {success ? (
+          <>
+            <div className="auth-info" role="status">{success}</div>
+            <button
+              className="auth-submit"
+              type="button"
+              onClick={() => navigate("/", { replace: true })}
+            >
+              Continue to Nexus Career
+            </button>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit}>
           <fieldset className="auth-role-fieldset" disabled={loading}>
             <legend>Register as</legend>
             <div className="auth-role-options">
@@ -243,7 +259,14 @@ export default function RegisterPage() {
                 accept="application/pdf,.pdf"
                 required
                 onChange={(event) => {
-                  setGraduationProof(event.target.files?.[0] ?? null);
+                  const file = event.target.files?.[0] ?? null;
+                  if (file && file.size > 5 * 1024 * 1024) {
+                    setGraduationProof(null);
+                    event.target.value = "";
+                    setError("Graduation proof must be 5 MB or smaller.");
+                    return;
+                  }
+                  setGraduationProof(file);
                   setError("");
                 }}
               />
@@ -283,7 +306,8 @@ export default function RegisterPage() {
           >
             {loading ? "Creating account..." : `Create ${accountTypes.find((item) => item.role === selectedRole)?.label} account`}
           </button>
-        </form>
+          </form>
+        )}
 
         <p className="auth-footer">
           Already registered?{" "}
