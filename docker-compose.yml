@@ -2,35 +2,31 @@ services:
   db:
     image: postgres:17
     restart: unless-stopped
-
     environment:
       POSTGRES_DB: nexus_career
       POSTGRES_USER: nexus_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-
     ports:
       - "127.0.0.1:5433:5432"
-
     volumes:
       - nexus_postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexus_user -d nexus_career"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-
-
-# ===== DevOps =====
-  
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      STUDENT_EMAIL_DOMAIN: ${STUDENT_EMAIL_DOMAIN:-scds.saiuniversity.edu.in}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
       PGDATABASE: nexus_career
       PGUSER: nexus_user
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
