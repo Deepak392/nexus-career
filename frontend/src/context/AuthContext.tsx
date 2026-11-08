@@ -85,13 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ALUMNI: "alumni",
       RECRUITER: "recruiter",
     };
+    const isPortalRole =
+      loggedInUser.role === "STUDENT" ||
+      loggedInUser.role === "ALUMNI" ||
+      loggedInUser.role === "RECRUITER";
 
     // The selector validates the three portal types shown on the login page.
     // Privileged accounts keep their existing credential-based login flow.
-    if (
-      loggedInUser.role in roleLabels &&
-      loggedInUser.role !== expectedRole
-    ) {
+    if (isPortalRole && loggedInUser.role !== expectedRole) {
       await apiLogout();
 
       const actualRole = roleLabels[loggedInUser.role as LoginRole];
