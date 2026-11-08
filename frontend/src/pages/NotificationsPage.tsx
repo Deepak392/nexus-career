@@ -10,6 +10,12 @@ import {
 } from "../services/student";
 import "./StudentPages.css";
 
+interface NotificationRequest {
+  ownerId: string;
+  notifications: InAppNotification[];
+  error: string;
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
@@ -19,43 +25,56 @@ function formatDate(value: string) {
 
 export default function NotificationsPage() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<InAppNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [request, setRequest] = useState<NotificationRequest | null>(null);
   const [updating, setUpdating] = useState<number | null>(null);
+  const ownerId = user ? String(user.id) : null;
+  const isCurrentRequest = ownerId !== null && request?.ownerId === ownerId;
+  const notifications = isCurrentRequest ? request.notifications : [];
+  const error = isCurrentRequest ? request.error : "";
+  const loading = ownerId !== null && !isCurrentRequest;
 
   const loadNotifications = useCallback(async () => {
-    setLoading(true);
-    setError("");
+    if (ownerId === null) return;
     try {
       const response = await getNotifications();
-      setNotifications(response.results);
+      setRequest({
+        ownerId,
+        notifications: response.results,
+        error: "",
+      });
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
-    } finally {
-      setLoading(false);
+      setRequest({
+        ownerId,
+        notifications: [],
+        error: getApiErrorMessage(requestError),
+      });
     }
-  }, []);
+  }, [ownerId]);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (ownerId === null) return;
     void loadNotifications();
-  }, [user, loadNotifications]);
+  }, [ownerId, loadNotifications]);
 
   async function handleMarkRead(notification: InAppNotification) {
     if (notification.read_at) return;
     setUpdating(notification.id);
-    setError("");
     try {
       const updated = await markNotificationRead(notification.id);
-      setNotifications((current) => current.map((item) =>
-        item.id === updated.id ? updated : item
-      ));
+      setRequest((current) => {
+        if (!current || current.ownerId !== ownerId) return current;
+        return {
+          ...current,
+          notifications: current.notifications.map((item) =>
+            item.id === updated.id ? updated : item
+          ),
+        };
+      });
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
+      setRequest((current) => current && current.ownerId === ownerId
+        ? { ...current, error: getApiErrorMessage(requestError) }
+        : current
+      );
     } finally {
       setUpdating(null);
     }

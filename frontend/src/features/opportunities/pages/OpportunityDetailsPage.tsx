@@ -15,40 +15,18 @@ import type { EligibilityResult } from "../../../services/student";
 import { getApiErrorMessage } from "../../../services/auth";
 import { formatDate } from "../../../utils/format";
 
-interface DetailRequest {
-  key: string;
-  item: Opportunity | null;
-  error: boolean;
-}
-interface SimilarRequest {
-  opportunityId: string;
-  items: Opportunity[];
-}
-interface EligibilityRequest {
-  key: string;
-  result: EligibilityResult | null;
-  error: string;
-}
+interface DetailRequest { key: string; item: Opportunity | null; error: boolean; }
+interface SimilarRequest { opportunityId: string; items: Opportunity[]; }
+interface EligibilityRequest { key: string; result: EligibilityResult | null; error: string; }
 
 export default function OpportunityDetailsPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [reloadKey, setReloadKey] = useState(0);
-  const [detailRequest, setDetailRequest] = useState<DetailRequest>({
-    key: "",
-    item: null,
-    error: false,
-  });
-  const [similarRequest, setSimilarRequest] = useState<SimilarRequest>({
-    opportunityId: "",
-    items: [],
-  });
-  const [eligibilityRequest, setEligibilityRequest] = useState<EligibilityRequest>({
-    key: "",
-    result: null,
-    error: "",
-  });
+  const [detailRequest, setDetailRequest] = useState<DetailRequest>({ key: "", item: null, error: false });
+  const [similarRequest, setSimilarRequest] = useState<SimilarRequest>({ opportunityId: "", items: [] });
+  const [eligibilityRequest, setEligibilityRequest] = useState<EligibilityRequest>({ key: "", result: null, error: "" });
   const [savedRequest, setSavedRequest] = useState(() => ({
     opportunityId: id,
     saved: getSavedIds().includes(id),
@@ -60,20 +38,18 @@ export default function OpportunityDetailsPage() {
   const loading = detailRequest.key !== requestKey;
   const item = loading ? null : detailRequest.item;
   const error = !loading && detailRequest.error;
-  const saved = savedRequest.opportunityId === id
-    ? savedRequest.saved
-    : getSavedIds().includes(id);
-  const similar = item && similarRequest.opportunityId === item.id
-    ? similarRequest.items
-    : [];
+  const saved = savedRequest.opportunityId === id ? savedRequest.saved : getSavedIds().includes(id);
+  const similar = item && similarRequest.opportunityId === item.id ? similarRequest.items : [];
 
   const isStudent = user?.role === "STUDENT";
   const eligibilityKey = id + "::" + String(user?.id ?? "guest");
-  const eligibility = eligibilityRequest.key === eligibilityKey
+  const eligibility = isStudent && eligibilityRequest.key === eligibilityKey
     ? eligibilityRequest.result
     : null;
   const eligibilityLoading = Boolean(isStudent && item && eligibilityRequest.key !== eligibilityKey);
-  const eligibilityError = eligibilityRequest.key === eligibilityKey ? eligibilityRequest.error : "";
+  const eligibilityError = isStudent && eligibilityRequest.key === eligibilityKey
+    ? eligibilityRequest.error
+    : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -88,12 +64,8 @@ export default function OpportunityDetailsPage() {
   }, [id, requestKey]);
 
   useEffect(() => {
-    if (!isStudent) {
-      setEligibilityRequest({ key: eligibilityKey, result: null, error: "" });
-      return undefined;
-    }
+    if (!isStudent) return undefined;
     let cancelled = false;
-    setEligibilityRequest({ key: eligibilityKey, result: null, error: "" });
     getOpportunityEligibility(id)
       .then((result) => {
         if (!cancelled) setEligibilityRequest({ key: eligibilityKey, result, error: "" });
@@ -130,10 +102,7 @@ export default function OpportunityDetailsPage() {
 
   const handleToggleSaved = () => {
     if (!item) return;
-    setSavedRequest({
-      opportunityId: item.id,
-      saved: toggleSaved(item.id),
-    });
+    setSavedRequest({ opportunityId: item.id, saved: toggleSaved(item.id) });
   };
 
   async function handleApply() {
@@ -144,11 +113,14 @@ export default function OpportunityDetailsPage() {
       await createApplication(item.id);
       navigate("/applications", { replace: true });
     } catch (requestError) {
-      setApplicationError(getApiErrorMessage(requestError));
-      if (getApiErrorMessage(requestError).toLowerCase().includes("already applied")) {
+      const message = getApiErrorMessage(requestError);
+      setApplicationError(message);
+      if (message.toLowerCase().includes("already applied")) {
         setEligibilityRequest((current) => ({
           ...current,
-          result: current.result ? { ...current.result, already_applied: true, ready_to_apply: false } : null,
+          result: current.result
+            ? { ...current.result, already_applied: true, ready_to_apply: false }
+            : null,
         }));
       }
     } finally {

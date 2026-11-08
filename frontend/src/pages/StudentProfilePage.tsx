@@ -24,6 +24,10 @@ interface ProfileDraft {
   preferred_locations: string;
   work_mode: string;
 }
+interface ProfileRequest {
+  ownerId: string;
+  profile: StudentProfile | null;
+}
 
 const emptyDraft: ProfileDraft = {
   student_id: "", department: "", degree_programme: "", graduation_year: "",
@@ -58,42 +62,42 @@ function appendList(form: FormData, key: string, value: string) {
 
 export default function StudentProfilePage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [profileRequest, setProfileRequest] = useState<ProfileRequest | null>(null);
   const [draft, setDraft] = useState<ProfileDraft>(emptyDraft);
   const [resume, setResume] = useState<File | null>(null);
   const [removeResume, setRemoveResume] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const ownerId = user?.role === "STUDENT" ? String(user.id) : null;
+  const isCurrentProfile = ownerId !== null && profileRequest?.ownerId === ownerId;
+  const profile = isCurrentProfile ? profileRequest.profile : null;
+  const loading = ownerId !== null && !isCurrentProfile;
+
   useEffect(() => {
-    if (user?.role !== "STUDENT") {
-      setLoading(false);
-      return undefined;
-    }
+    if (ownerId === null) return undefined;
     let active = true;
-    setLoading(true);
     getStudentProfile()
       .then((result) => {
         if (!active) return;
-        setProfile(result);
+        setProfileRequest({ ownerId, profile: result });
         setDraft(toDraft(result));
+        setError("");
       })
       .catch((requestError: unknown) => {
         if (!active) return;
         if (isProfileNotFound(requestError)) {
-          setProfile(null);
+          setProfileRequest({ ownerId, profile: null });
           setDraft(emptyDraft);
+          setError("");
         } else {
+          setProfileRequest({ ownerId, profile: null });
           setError(getApiErrorMessage(requestError));
         }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [user?.role]);
+  }, [ownerId]);
 
   function updateField<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -137,7 +141,7 @@ export default function StudentProfilePage() {
     setSaving(true);
     try {
       const saved = await saveStudentProfile(form, Boolean(profile));
-      setProfile(saved);
+      setProfileRequest({ ownerId: ownerId ?? "", profile: saved });
       setDraft(toDraft(saved));
       setResume(null);
       setRemoveResume(false);
@@ -149,7 +153,7 @@ export default function StudentProfilePage() {
     }
   }
 
-  if (user?.role !== "STUDENT") {
+  if (ownerId === null) {
     return (
       <main className="student-page">
         <h1>Student profile</h1>

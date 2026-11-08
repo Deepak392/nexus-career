@@ -6,6 +6,12 @@ import { getApiErrorMessage } from "../services/auth";
 import { getStudentApplications, type StudentApplication } from "../services/student";
 import "./StudentPages.css";
 
+interface ApplicationRequest {
+  ownerId: string;
+  applications: StudentApplication[];
+  error: string;
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
@@ -20,31 +26,39 @@ function statusClass(status: string) {
 
 export default function ApplicationsPage() {
   const { user } = useAuth();
-  const [applications, setApplications] = useState<StudentApplication[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [request, setRequest] = useState<ApplicationRequest | null>(null);
+  const ownerId = user?.role === "STUDENT" ? String(user.id) : null;
+  const isCurrentRequest = ownerId !== null && request?.ownerId === ownerId;
+  const applications = isCurrentRequest ? request.applications : [];
+  const error = isCurrentRequest ? request.error : "";
+  const loading = ownerId !== null && !isCurrentRequest;
 
   useEffect(() => {
-    if (user?.role !== "STUDENT") {
-      setLoading(false);
-      return undefined;
-    }
+    if (ownerId === null) return undefined;
     let active = true;
-    setLoading(true);
     getStudentApplications()
       .then((response) => {
-        if (active) setApplications(response.results);
+        if (active) {
+          setRequest({
+            ownerId,
+            applications: response.results,
+            error: "",
+          });
+        }
       })
       .catch((requestError: unknown) => {
-        if (active) setError(getApiErrorMessage(requestError));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          setRequest({
+            ownerId,
+            applications: [],
+            error: getApiErrorMessage(requestError),
+          });
+        }
       });
     return () => { active = false; };
-  }, [user?.role]);
+  }, [ownerId]);
 
-  if (user?.role !== "STUDENT") {
+  if (ownerId === null) {
     return (
       <main className="student-page">
         <h1>My applications</h1>
