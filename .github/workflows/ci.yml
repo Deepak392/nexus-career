@@ -67,6 +67,27 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Report frontend dependency audit
+        run: |
+          npm audit --json > "$RUNNER_TEMP/npm-audit.json" || true
+          node <<'NODE'
+          const fs = require("node:fs");
+          const report = JSON.parse(
+            fs.readFileSync(process.env.RUNNER_TEMP + "/npm-audit.json", "utf8")
+          );
+          const vulnerabilities = report.vulnerabilities || {};
+          const entries = Object.entries(vulnerabilities);
+          console.log(`npm audit: ${entries.length} affected package(s)`);
+          for (const [name, finding] of entries) {
+            const fix = typeof finding.fixAvailable === "object"
+              ? JSON.stringify(finding.fixAvailable)
+              : String(finding.fixAvailable);
+            console.log(
+              `${finding.severity}: ${name}; direct=${finding.isDirect}; range=${finding.range}; fixAvailable=${fix}`
+            );
+          }
+          NODE
+
       - name: Lint frontend
         run: npm run lint
 
