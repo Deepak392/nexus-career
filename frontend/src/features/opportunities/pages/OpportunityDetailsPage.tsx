@@ -1,48 +1,112 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getOpportunityById, getOpportunities, getSavedIds, toggleSaved } from "../api";
+import {
+  getOpportunityById,
+  getOpportunities,
+  getSavedIds,
+  toggleSaved,
+} from "../api";
 import type { Opportunity } from "../../../types";
 import { formatDate } from "../../../utils/format";
 
+interface DetailRequest {
+  key: string;
+  item: Opportunity | null;
+  error: boolean;
+}
+
+interface SimilarRequest {
+  opportunityId: string;
+  items: Opportunity[];
+}
+
 export default function OpportunityDetailsPage() {
   const { id = "" } = useParams();
-  const [item, setItem] = useState<Opportunity | null>(null);
-  const [similar, setSimilar] = useState<Opportunity[]>([]);
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [detailRequest, setDetailRequest] = useState<DetailRequest>({
+    key: "",
+    item: null,
+    error: false,
+  });
+  const [similarRequest, setSimilarRequest] = useState<SimilarRequest>({
+    opportunityId: "",
+    items: [],
+  });
+  const [savedRequest, setSavedRequest] = useState(() => ({
+    opportunityId: id,
+    saved: getSavedIds().includes(id),
+  }));
+
+  const requestKey = `${id}::${reloadKey}`;
+  const loading = detailRequest.key !== requestKey;
+  const item = loading ? null : detailRequest.item;
+  const error = !loading && detailRequest.error;
+  const saved = savedRequest.opportunityId === id
+    ? savedRequest.saved
+    : getSavedIds().includes(id);
+  const similar = item && similarRequest.opportunityId === item.id
+    ? similarRequest.items
+    : [];
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(false);
-    setSaved(getSavedIds().includes(id));
+
     getOpportunityById(id)
-      .then((res) => {
-        if (!cancelled) setItem(res);
+      .then((result) => {
+        if (!cancelled) {
+          setDetailRequest({
+            key: requestKey,
+            item: result,
+            error: false,
+          });
+        }
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setDetailRequest({
+            key: requestKey,
+            item: null,
+            error: true,
+          });
+        }
       });
+
     return () => {
       cancelled = true;
     };
-  }, [id, reloadKey]);
+  }, [id, requestKey]);
 
   useEffect(() => {
-    if (!item) return;
+    if (!item) return undefined;
+
     let cancelled = false;
-    getOpportunities({ type: item.type, limit: 4 }).then((res) => {
-      if (!cancelled) setSimilar(res.items.filter((o) => o.id !== item.id).slice(0, 3));
-    });
+    getOpportunities({ type: item.type, limit: 4 })
+      .then((result) => {
+        if (!cancelled) {
+          setSimilarRequest({
+            opportunityId: item.id,
+            items: result.items.filter((opportunity) => opportunity.id !== item.id).slice(0, 3),
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSimilarRequest({ opportunityId: item.id, items: [] });
+        }
+      });
+
     return () => {
       cancelled = true;
     };
   }, [item]);
+
+  const handleToggleSaved = () => {
+    if (!item) return;
+    setSavedRequest({
+      opportunityId: item.id,
+      saved: toggleSaved(item.id),
+    });
+  };
 
   return (
     <main className="container">
@@ -53,7 +117,7 @@ export default function OpportunityDetailsPage() {
       {error && (
         <div className="state error">
           <p>Something went wrong.</p>
-          <button onClick={() => setReloadKey((k) => k + 1)}>Retry</button>
+          <button onClick={() => setReloadKey((key) => key + 1)}>Retry</button>
         </div>
       )}
 
@@ -96,8 +160,8 @@ export default function OpportunityDetailsPage() {
 
           <h3>Skills</h3>
           <div className="chips">
-            {item.skills.map((s) => (
-              <span key={s} className="chip">{s}</span>
+            {item.skills.map((skill) => (
+              <span key={skill} className="chip">{skill}</span>
             ))}
           </div>
 
@@ -106,8 +170,8 @@ export default function OpportunityDetailsPage() {
 
           <h3>Requirements</h3>
           <ul>
-            {item.requirements.map((r) => (
-              <li key={r}>{r}</li>
+            {item.requirements.map((requirement) => (
+              <li key={requirement}>{requirement}</li>
             ))}
           </ul>
 
@@ -119,7 +183,7 @@ export default function OpportunityDetailsPage() {
             >
               {item.applicationMethod === "External link" ? "Apply on company site" : "Apply"}
             </button>
-            <button className="btn secondary" onClick={() => setSaved(toggleSaved(item.id))}>
+            <button className="btn secondary" onClick={handleToggleSaved}>
               {saved ? "Saved" : "Save opportunity"}
             </button>
           </div>
@@ -130,12 +194,12 @@ export default function OpportunityDetailsPage() {
         <section>
           <h3>Other opportunities you may like</h3>
           <div className="grid">
-            {similar.map((o) => (
-              <article key={o.id} className="card">
-                <span className="badge">{o.type}</span>
-                <h3>{o.title}</h3>
-                <p className="muted">{o.company} • {o.location}</p>
-                <Link className="btn" to={`/opportunities/${o.id}`}>View details</Link>
+            {similar.map((opportunity) => (
+              <article key={opportunity.id} className="card">
+                <span className="badge">{opportunity.type}</span>
+                <h3>{opportunity.title}</h3>
+                <p className="muted">{opportunity.company} • {opportunity.location}</p>
+                <Link className="btn" to={`/opportunities/${opportunity.id}`}>View details</Link>
               </article>
             ))}
           </div>
