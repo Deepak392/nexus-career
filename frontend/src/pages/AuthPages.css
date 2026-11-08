@@ -82,6 +82,76 @@
   box-shadow: 0 0 0 3px rgba(59, 68, 196, 0.11);
 }
 
+.auth-role-fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0 0 10px;
+  border: 0;
+}
+
+.auth-role-fieldset legend {
+  margin-bottom: 10px;
+  color: #303548;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.auth-role-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auth-role-option {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #d9dce6;
+  border-radius: 10px;
+  background: #fff;
+  color: #303548;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.auth-role-option:hover {
+  border-color: #9299e5;
+  background: #f8f8ff;
+}
+
+.auth-role-option:focus-visible {
+  outline: 3px solid rgba(59, 68, 196, 0.25);
+  outline-offset: 2px;
+}
+
+.auth-role-option.selected {
+  border-color: #3b44c4;
+  background: #f1f2ff;
+  box-shadow: 0 0 0 1px #3b44c4;
+}
+
+.auth-role-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-role-description {
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.auth-role-fieldset:disabled .auth-role-option {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .auth-submit {
   width: 100%;
   min-height: 46px;
@@ -151,8 +221,23 @@
   .auth-card h1 {
     font-size: 23px;
   }
-}
 
+  .auth-role-options {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-role-option {
+    min-height: 58px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .auth-role-description {
+    text-align: right;
+  }
+}
 
 :root[data-theme="dark"] .auth-page { background: var(--page-bg); color: var(--text); }
 :root[data-theme="dark"] .auth-card { background: var(--surface); border-color: var(--border); }
@@ -160,7 +245,8 @@
 :root[data-theme="dark"] .auth-card h1 { color: var(--text-strong); }
 :root[data-theme="dark"] .auth-subtitle,
 :root[data-theme="dark"] .auth-footer { color: var(--text-muted); }
-:root[data-theme="dark"] .auth-card label { color: var(--text); }
+:root[data-theme="dark"] .auth-card label,
+:root[data-theme="dark"] .auth-role-fieldset legend { color: var(--text); }
 :root[data-theme="dark"] .auth-card input {
   background: var(--field-bg);
   color: var(--text);
@@ -168,3 +254,15 @@
 }
 :root[data-theme="dark"] .auth-card input::placeholder { color: var(--text-muted); }
 :root[data-theme="dark"] .auth-footer a { color: var(--accent); }
+:root[data-theme="dark"] .auth-role-option {
+  background: var(--field-bg);
+  color: var(--text);
+  border-color: var(--field-border);
+}
+:root[data-theme="dark"] .auth-role-option:hover { background: var(--surface-alt); }
+:root[data-theme="dark"] .auth-role-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+:root[data-theme="dark"] .auth-role-description { color: var(--text-muted); }
