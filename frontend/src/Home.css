@@ -1,7 +1,12 @@
-.home { max-width: 800px; margin: 0 auto; padding: 80px 20px; text-align: center; }
-.home h1 { font-size: 2.8rem; margin-bottom: 10px; }
-.home p { color: #666; }
+.home { max-width: 800px; margin: 0 auto; padding: 80px 20px; text-align: center; color: var(--text); }
+.home h1 { color: var(--text-strong); font-size: 2.8rem; margin-bottom: 10px; }
+.home p { color: var(--text-muted); }
 .home form { display: flex; gap: 8px; margin: 24px 0 16px; }
-.home input { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
-.home button { background: #4338ca; color: #fff; border: 0; padding: 12px 20px; border-radius: 10px; cursor: pointer; }
-.link { color: #4338ca; }
+.home input { flex: 1; min-width: 0; padding: 14px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field-bg); color: var(--text); font-size: 1rem; }
+.home button { background: var(--accent-strong); color: var(--accent-contrast); border: 0; padding: 12px 20px; border-radius: 10px; cursor: pointer; }
+.link { color: var(--accent); }
+@media (max-width: 520px) {
+  .home { padding-top: 48px; }
+  .home h1 { font-size: 2.1rem; }
+  .home form { flex-direction: column; }
+}

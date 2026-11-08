@@ -107,3 +107,49 @@
   .workflow-form-grid { grid-template-columns: 1fr; }
   .workflow-actions.wrap { justify-content: flex-start; }
 }
+
+
+:root[data-theme="dark"] .workflow-subtitle,
+:root[data-theme="dark"] .workflow-panel-heading p,
+:root[data-theme="dark"] .workflow-stat span,
+:root[data-theme="dark"] .workflow-list-main > p,
+:root[data-theme="dark"] .workflow-company-summary p { color: var(--text-muted); }
+:root[data-theme="dark"] .workflow-header h1,
+:root[data-theme="dark"] .workflow-panel h2,
+:root[data-theme="dark"] .workflow-list-title h3,
+:root[data-theme="dark"] .workflow-company-summary strong,
+:root[data-theme="dark"] .workflow-stat strong { color: var(--text-strong); }
+:root[data-theme="dark"] .workflow-panel,
+:root[data-theme="dark"] .workflow-stat,
+:root[data-theme="dark"] .workflow-list-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .workflow-company-summary,
+:root[data-theme="dark"] .workflow-empty,
+:root[data-theme="dark"] .workflow-state { background: var(--surface-alt); border-color: var(--border); color: var(--text-muted); }
+:root[data-theme="dark"] .workflow-form label,
+:root[data-theme="dark"] .workflow-inline-field { color: var(--text); }
+:root[data-theme="dark"] .workflow-form input,
+:root[data-theme="dark"] .workflow-form select,
+:root[data-theme="dark"] .workflow-form textarea,
+:root[data-theme="dark"] .workflow-inline-field input {
+  background: var(--field-bg);
+  color: var(--text);
+  border-color: var(--field-border);
+}
+:root[data-theme="dark"] .workflow-button.secondary,
+:root[data-theme="dark"] .workflow-button.danger { background: var(--surface); border-color: var(--border-strong); }
+:root[data-theme="dark"] .workflow-button.secondary { color: var(--accent); }
+:root[data-theme="dark"] .workflow-button.danger { color: #ffb9c0; }
+:root[data-theme="dark"] .workflow-status { background: #29354a; color: #d5deed; }
+:root[data-theme="dark"] .workflow-status.pending { background: #49391e; color: #f5d28b; }
+:root[data-theme="dark"] .workflow-status.verified,
+:root[data-theme="dark"] .workflow-status.published { background: #173c30; color: #a7e6c1; }
+:root[data-theme="dark"] .workflow-status.rejected { background: #48262d; color: #ffc0c5; }
+:root[data-theme="dark"] .workflow-status.closed,
+:root[data-theme="dark"] .workflow-status.archived { background: #273653; color: #c2d2ee; }
+:root[data-theme="dark"] .workflow-hint { color: #f5d28b; }
+:root[data-theme="dark"] .workflow-rejection { color: #ffc0c5; }
+:root[data-theme="dark"] .workflow-alert.error { background: var(--danger-bg); color: var(--danger-text); }
+:root[data-theme="dark"] .workflow-alert.success { background: var(--success-bg); color: var(--success-text); }

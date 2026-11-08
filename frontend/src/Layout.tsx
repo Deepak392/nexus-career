@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
+import ThemeToggle from "./components/ThemeToggle";
 import "./Layout.css";
 
 const studentLinks = [
@@ -37,6 +38,7 @@ export default function Layout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">Nexus Career</div>
+        <ThemeToggle />
         <div className="sidebar-profile">
           <div className="avatar">{initials}</div>
           <div>
@@ -54,10 +56,10 @@ export default function Layout() {
             )}
           </div>
         </div>
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main navigation">
           {links.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}>
-              <span>{link.icon}</span>
+              <span aria-hidden="true">{link.icon}</span>
               {link.label}
             </NavLink>
           ))}
