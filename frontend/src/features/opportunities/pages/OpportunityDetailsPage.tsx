@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../../context/AuthContext";
 import {
-  createApplication,
   getOpportunityById,
   getOpportunityEligibility,
   getOpportunities,
@@ -11,7 +10,7 @@ import {
   toggleSaved,
 } from "../api";
 import type { Opportunity } from "../../../types";
-import type { EligibilityResult } from "../../../services/student";
+import { createApplication, type EligibilityResult } from "../../../services/student";
 import { getApiErrorMessage } from "../../../services/auth";
 import { formatDate } from "../../../utils/format";
 
