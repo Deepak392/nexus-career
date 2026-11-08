@@ -15,13 +15,14 @@ import {
   getAccessToken,
   clearAuthTokens,
   type AuthUser,
+  type LoginRole,
 } from "../services/auth";
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, expectedRole: LoginRole) => Promise<void>;
   register: (
     username: string,
     email: string,
@@ -73,8 +74,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function handleLogin(username: string, password: string) {
+  async function handleLogin(
+    username: string,
+    password: string,
+    expectedRole: LoginRole
+  ) {
     const loggedInUser = await apiLogin(username, password);
+
+    if (loggedInUser.role !== expectedRole) {
+      await apiLogout();
+
+      const roleLabels: Record<LoginRole, string> = {
+        STUDENT: "student",
+        ALUMNI: "alumni",
+        RECRUITER: "recruiter",
+      };
+      const actualRole = roleLabels[loggedInUser.role as LoginRole];
+
+      if (!actualRole) {
+        throw new Error(
+          "This login page supports student, alumni and recruiter accounts. Contact your platform administrator to access an administrator account."
+        );
+      }
+
+      const expectedRoleLabel = actualRole[0].toUpperCase() + actualRole.slice(1);
+      throw new Error(
+        `These credentials belong to a ${actualRole} account. Select "${expectedRoleLabel}" to sign in.`
+      );
+    }
+
     setUser(loggedInUser);
   }
 
