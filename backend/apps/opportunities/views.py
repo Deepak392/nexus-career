@@ -6,12 +6,7 @@ from .serializers import OpportunitySerializer
 
 
 class OpportunityViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Public discovery is limited to published opportunities that have not expired.
-
-    Create/update/approval actions must be added with explicit recruiter and IPC
-    permissions in the owning workflow rather than exposing unrestricted writes.
-    """
+    """Public discovery exposes published opportunities before their deadlines."""
 
     serializer_class = OpportunitySerializer
 
@@ -21,6 +16,6 @@ class OpportunityViewSet(viewsets.ReadOnlyModelViewSet):
                 status=Opportunity.Status.PUBLISHED,
                 application_deadline__gt=timezone.now(),
             )
-            .select_related("company")
+            .select_related("company", "created_by")
             .order_by("-published_at", "-created_at")
         )
