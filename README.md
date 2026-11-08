@@ -1,423 +1,274 @@
 # Nexus Career
 
-**Nexus Career** is a centralized placement and internship management platform designed to streamline career services within a university ecosystem.
+Nexus Career is a university careers platform for discovering jobs and internships and supporting student, recruiter, IPC, and alumni workflows.
 
-The platform provides a unified system for managing student profiles, placement and internship opportunities, applications, alumni engagement, referrals, notifications, and career analytics.
+The repository is under active development. The current implementation includes Django REST API foundations, JWT authentication, student and alumni profiles, and read-only published-opportunity discovery. Some product areas described in the SRS (including recruiter management, applications, referrals, notifications, and analytics) are not yet implemented end to end.
 
----
+## Technology stack
 
-## Overview
+| Area | Technology |
+|---|---|
+| Backend | Python 3.12, Django 5.2, Django REST Framework |
+| Authentication | Simple JWT |
+| API documentation | drf-spectacular (OpenAPI, Swagger UI, ReDoc) |
+| Database | PostgreSQL 17 |
+| Frontend | React 19, TypeScript, React Router, Vite |
+| Local infrastructure | Docker Compose |
+| Quality checks | Django tests, pytest (development), Ruff, ESLint, TypeScript build |
+| CI | GitHub Actions |
 
-University placement processes often involve multiple disconnected systems for student information, job opportunities, applications, communication, and alumni engagement.
-
-Nexus Career addresses this fragmentation through a modular platform that provides a common interface for students, alumni, recruiters, and university administrators.
-
-The system is being developed with a focus on **modularity, maintainability, scalability, security, and automated software delivery**.
-
----
-
-## Key Capabilities
-
-* **User & Account Management** — Authentication, authorization, and role-based access.
-* **Student Profiles** — Centralized academic and career information.
-* **Placement Management** — Management of placement opportunities and applications.
-* **Internship Management** — Internship opportunities and application tracking.
-* **Alumni Network** — Alumni profiles and student-alumni engagement.
-* **Referral Management** — Management and tracking of referrals.
-* **Notifications** — Centralized application and system notifications.
-* **Analytics** — Placement, internship, and application insights.
-* **Document Management** — Management of resumes, offer letters, alumni profiles, and company assets.
-
----
-
-## Architecture
-
-The project follows a modular architecture with a Django-based backend and a dedicated frontend application.
-
-```text
-                        ┌─────────────────────┐
-                        │       Frontend      │
-                        │  React / Next.js    │
-                        └──────────┬──────────┘
-                                   │
-                                   │ REST API
-                                   ▼
-                        ┌─────────────────────┐
-                        │       Backend       │
-                        │       Django        │
-                        └──────────┬──────────┘
-                                   │
-              ┌────────────────────┼────────────────────┐
-              │                    │                    │
-              ▼                    ▼                    ▼
-       ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-       │ PostgreSQL  │      │   Celery    │      │    Media    │
-       │  Database   │      │ Background  │      │  Documents  │
-       │             │      │    Tasks    │      │             │
-       └─────────────┘      └─────────────┘      └─────────────┘
-```
-
----
-
-## Repository Structure
+## Repository layout
 
 ```text
 nexus-career/
-│
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml
-│   │   ├── cd.yml
-│   │   └── code-quality.yml
-│   │
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
-│   │
-│   └── PULL_REQUEST_TEMPLATE.md
-│
+├── .github/workflows/       # CI and code-quality workflows
 ├── backend/
-│   ├── config/
-│   │   └── settings/
-│   │
+│   ├── api/
+│   │   ├── core/            # Shared API utilities, pagination
+│   │   └── v1/              # Versioned API routes
 │   ├── apps/
-│   │   ├── accounts/
-│   │   ├── core/
-│   │   ├── placement/
-│   │   ├── alumni/
-│   │   ├── referrals/
-│   │   ├── notifications/
-│   │   └── analytics/
-│   │
-│   ├── templates/
-│   ├── static/
-│   ├── media/
-│   ├── requirements/
-│   └── tests/
-│
+│   │   ├── accounts/        # Custom user model and JWT authentication
+│   │   ├── students/        # Student profile API
+│   │   ├── alumni/          # Alumni profile and search API
+│   │   ├── recruiters/      # Recruiter/company domain models (API work pending)
+│   │   └── opportunities/   # Opportunity model and published listing API
+│   ├── config/              # Django settings and entry points
+│   ├── requirements/        # Runtime and development dependency sets
+│   ├── tests/               # Cross-module backend tests
+│   ├── Dockerfile
+│   ├── manage.py
+│   └── requirements.txt
 ├── frontend/
-├── docs/
-├── docker/
-├── scripts/
-│
-├── .gitignore
-├── CONTRIBUTING.md
-├── docker-compose.yml
-├── Makefile
-├── LICENSE
-└── README.md
+│   ├── src/
+│   │   ├── features/opportunities/
+│   │   ├── mocks/            # Demo opportunity data; API integration pending
+│   │   └── ...
+│   ├── package.json
+│   └── vite.config.ts
+├── docs/                    # Project requirements and technical documentation
+├── .env.example
+└── docker-compose.yml
 ```
 
-The backend is organized into independent Django applications to keep domain-specific functionality isolated and maintainable.
+## Prerequisites
 
----
-
-## Backend Modules
-
-| Module          | Responsibility                                     |
-| --------------- | -------------------------------------------------- |
-| `accounts`      | User accounts, authentication, and authorization   |
-| `core`          | Shared application functionality                   |
-| `placement`     | Placement opportunities and application management |
-| `alumni`        | Alumni profiles and engagement                     |
-| `referrals`     | Referral creation and tracking                     |
-| `notifications` | Application and system notifications               |
-| `analytics`     | Placement and career-related analytics             |
-
-Individual Django applications follow a consistent internal structure containing models, serializers, views, URLs, permissions, services, selectors, signals, tasks, constants, exceptions, and tests.
-
----
-
-## Technology Stack
-
-### Backend
-
-* Python
-* Django
-* Django REST Framework
-* Celery
-
-### Frontend
-
-* TypeScript
-* React / Next.js
-* Tailwind CSS
-
-### Database
-
-* PostgreSQL
-
-### Infrastructure
-
-* Docker
-* Docker Compose
-* GitHub Actions
-* CI/CD
-
-### Testing & Quality
-
-* Pytest
-* Automated test suites
-* Automated code-quality checks
-
----
-
-## Development Setup
-
-### Prerequisites
-
-Ensure the following are installed:
+Install:
 
 - Git
-- Docker Desktop (includes Docker Compose)
-- `make` (optional, see below)
+- Docker Desktop with Docker Compose
+- Python 3.12 (for running Django directly on Windows/macOS/Linux)
+- Node.js 24 and npm (for the Vite frontend)
+- Visual Studio Code (recommended)
 
-Python and PostgreSQL do not need to be installed on your machine when you use Docker.
+You do not need a host PostgreSQL installation when using the provided Docker Compose database service.
 
-### Quick Start (Docker)
+## Quick start: run the full application locally
 
-1. Clone the repository:
+### 1. Clone the repository
 
-```
+```bash
 git clone https://github.com/Deepak392/nexus-career.git
 cd nexus-career
 ```
 
-2. Create your local environment file:
+### 2. Create your local environment file
 
-**Windows (PowerShell)**
+Windows PowerShell:
 
+```powershell
+Copy-Item .env.example .env
 ```
-copy .env.example .env
-```
 
-**Linux / macOS**
+macOS/Linux:
 
-```
+```bash
 cp .env.example .env
 ```
 
-Open `.env` and set `POSTGRES_PASSWORD` to any password for your own machine. Never commit `.env`.
+Open `.env`. Replace the example passwords and local-only Django secret with values for your machine. Keep `.env` private; never commit it. If you change the PostgreSQL password, keep `POSTGRES_PASSWORD` and `PGPASSWORD` in sync for both Docker and host-side development.
 
-3. Build and start the services:
-Use `backend/.env.example` as the list of local environment variables. Django reads
-environment variables directly and does not load `.env` files itself; export those
-values in your shell or use a local environment tool. For local development, set
-`DJANGO_DEBUG=true` and a local-only `DJANGO_SECRET_KEY` before starting Django. When
-`DJANGO_DEBUG` is false, Django refuses to start without an explicit secret key. Do not
-commit secrets.
+### 3. Build and start PostgreSQL and Django
 
-Run database migrations:
+Make sure Docker Desktop is running, then run from the repository root:
 
-```
-docker compose up --build
+```bash
+docker compose up -d --build
 ```
 
-4. In a second terminal, apply the database migrations:
+Apply database migrations:
 
-```
+```bash
 docker compose exec backend python manage.py migrate
 ```
 
-5. Open http://localhost:8000
+Create an administrator account:
 
-### Docker Commands
-
-Stop the services:
-
-```
-docker compose down
+```bash
+docker compose exec backend python manage.py createsuperuser
 ```
 
-Run in detached mode:
+Backend URLs:
 
+- Django: http://localhost:8000/
+- Django admin: http://localhost:8000/admin/
+- OpenAPI schema: http://localhost:8000/api/schema/
+- Swagger UI: http://localhost:8000/api/docs/
+- ReDoc: http://localhost:8000/api/redoc/
+
+### 4. Start the frontend
+
+Open a second terminal:
+
+```bash
+cd frontend
+npm ci
+npm run dev
 ```
-docker compose up -d
-```
 
-### Make Shortcuts (optional)
+Vite prints the local URL; the default is http://localhost:5173/.
 
-| Command | What it does |
-|---|---|
-| `make up` | Build and start everything |
-| `make down` | Stop and remove the containers (data is kept) |
-| `make build` | Rebuild the images |
-| `make logs` | Follow live logs |
-| `make ps` | Show running containers |
-| `make migrate` | Apply database migrations |
-| `make makemigrations` | Create new migrations |
-| `make shell` | Open the Django shell |
-| `make test` | Run the tests |
-| `make clean` | Stop everything and **delete the local database** |
+The current opportunities UI uses mock data and demo local-storage sign-in. It is not yet wired to the Django authentication or opportunity APIs.
 
-On Windows, install `make` with `winget install ezwinports.make`, then open a new terminal.
+## Run the backend directly in VS Code (database in Docker)
 
-### Running Django Without Docker (optional)
+This workflow is useful when you want Python breakpoints and Django reloads in VS Code while keeping PostgreSQL in Docker.
 
-Start only the database in Docker, then run Django on your machine:
+Start only PostgreSQL from the repository root:
 
-```
+```bash
 docker compose up -d db
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+```
+
+Create and activate a virtual environment:
+
+Windows PowerShell (from `backend/`):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS/Linux (from `backend/`):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install the development dependencies:
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements/development.txt
+```
+
+The root `.env` file is loaded by Django. For host-side connections it uses `PGHOST=127.0.0.1` and `PGPORT=5433`, because Compose publishes PostgreSQL on port 5433.
+
+From `backend/`, run:
+
+```bash
+python manage.py check
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-On Linux / macOS, activate with `source venv/bin/activate`. The database is published on `127.0.0.1:5433`.
----
+Open http://127.0.0.1:8000/. Keep the backend terminal running and start the frontend in a separate terminal as described above.
 
-## Testing
+## Backend API routes currently registered
 
-Run the backend tests inside the container:
-Run the backend test suite from `backend/` with:
+| Route | Purpose |
+|---|---|
+| `POST /api/v1/auth/register/` | Student registration (configured university email domain) |
+| `POST /api/v1/auth/login/` | Obtain JWT access and refresh tokens |
+| `POST /api/v1/auth/refresh/` | Refresh an access token |
+| `GET /api/v1/auth/me/` | Get the authenticated user's profile |
+| `POST /api/v1/auth/logout/` | Blacklist a refresh token |
+| `GET/POST/PUT/PATCH /api/v1/students/profile/` | Manage the authenticated student's profile |
+| `GET/POST/PUT/PATCH /api/v1/alumni/profile/` | Manage the authenticated alumnus profile |
+| `GET /api/v1/alumni/search/` | Search verified alumni |
+| `GET /api/v1/opportunities/` | List published, unexpired opportunities |
+| `GET /api/v1/opportunities/{id}/` | Retrieve a published opportunity |
 
-```
+Opportunity create/update/approval actions are intentionally not exposed through the public listing API until recruiter and IPC authorization workflows are implemented.
+
+## Tests and quality checks
+
+Run the Django backend test suite:
+
+```bash
+# From the repository root, with Docker services running:
 docker compose exec backend python manage.py test
 ```
 
-or with `make`:
-
-```
-make test
-```
-The tests use PostgreSQL, matching the development database. Start a local PostgreSQL
-instance and set `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, and `PGPORT` before
-running pytest. For a local PowerShell session, also set:
-
-```powershell
-$env:DJANGO_DEBUG = "true"
-$env:DJANGO_SECRET_KEY = "local-development-only"
-```
-
-Django creates and destroys a separate test database; never point test settings at
-production data. The configured PostgreSQL user must be allowed to create databases;
-Django uses a separate `test_<PGDATABASE>` database. Tests are in `backend/tests/`;
-role fixtures are test helpers only and do not define the production role model or
-permissions.
-
-### API schema and interactive docs
-
-Start the backend with `python manage.py runserver` from `backend/`. The OpenAPI schema
-is at `/api/schema/`, Swagger UI at `/api/docs/`, and ReDoc at `/api/redoc/`. API routes
-are versioned under `/api/v1/`. Only registered routes appear in the schema; no product
-endpoints are present until their owning modules implement them. Authentication and the
-shared error contract still require team agreement and are documented as pending in
-[`docs/api-conventions.md`](docs/api-conventions.md).
-
-Continuous integration also runs these checks on every pull request.
----
-
-## Development Workflow
-
-Development follows a feature-branch and pull-request workflow.
-
-```text
-main
-│
-├── feature/<feature-name>
-├── fix/<issue-name>
-└── docs/<change>
-```
-
-Create a feature branch:
+Or run locally from `backend/` with the virtual environment activated:
 
 ```bash
-git checkout -b feature/<feature-name>
+python manage.py test
 ```
 
-Commit changes using descriptive messages:
+Optional pytest-based development tests:
 
 ```bash
-git add .
-git commit -m "feat: add internship application tracking"
+# From backend/
+pytest
 ```
 
-Push the branch:
+Frontend checks:
 
 ```bash
-git push origin feature/<feature-name>
+# From frontend/
+npm ci
+npm run lint
+npm run build
 ```
 
-Open a Pull Request against `main` after completing development and testing.
+CI runs backend dependency verification, Django system checks, migration checks, backend tests, frontend lint, and the frontend production build for pull requests and pushes to `main`.
 
----
+## Useful Docker commands
 
-## CI/CD
+Run the stack:
 
-GitHub Actions is used to automate development workflows.
-
-The repository includes workflows for:
-
-* Continuous Integration
-* Continuous Deployment
-* Code-quality checks
-
-Workflow definitions are maintained under:
-
-```text
-.github/workflows/
+```bash
+docker compose up -d
 ```
 
----
+View service status and logs:
 
-## Environment Configuration
-
-Environment-specific configuration is not committed to the repository.
-
-Create your local file from the template in the **project root**:
-
-```
-.env.example  ->  .env
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f db
 ```
 
-| Variable | Purpose |
-|---|---|
-| `POSTGRES_PASSWORD` | Database password (required) |
+Stop containers (keeps the database volume):
 
-Sensitive credentials, database passwords, API keys and other secrets must remain outside version control.
-
----
-
-## Project Documentation
-
-Project documentation is maintained in:
-
-```text
-docs/
+```bash
+docker compose down
 ```
 
-This directory is intended for system design documentation, architecture decisions, API documentation, development guidelines, and other project-level technical documentation.
+Delete the local database volume (destructive; removes local database data):
 
----
+```bash
+docker compose down -v
+```
 
-## Contributing
+## Development workflow
 
-Contributions should follow the development workflow and project conventions defined in `CONTRIBUTING.md`.
+1. Update your local `main` branch before starting work.
+2. Create a focused branch such as `feature/<module-name>` or `fix/<issue-name>`.
+3. Keep each change scoped to one module or concern.
+4. Add/update tests and run the relevant checks.
+5. Open a pull request against `main`; merge only after review and required CI checks pass.
 
-Before submitting a Pull Request:
+## Configuration notes
 
-1. Create a dedicated branch.
-2. Implement the required changes.
-3. Add or update tests where applicable.
-4. Run the test suite.
-5. Run code-quality checks.
-6. Submit a Pull Request with a clear description of the changes.
+- `POSTGRES_PASSWORD` is used by the PostgreSQL container.
+- `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, and `PGPORT` configure Django's database connection.
+- `STUDENT_EMAIL_DOMAIN` configures the allowed domain for student registration. The default is `scds.saiuniversity.edu.in`; confirm this with the university before production use.
+- `CORS_ALLOWED_ORIGINS` configures allowed frontend development origins.
+- `DJANGO_SECRET_KEY` must be a private, sufficiently long random value outside local debug development.
 
----
+## Project status
 
-## Project Status
-
-**Status:** Active Development
-
-Nexus Career is being developed as a Software Engineering project at **Sai University**.
-
-The current repository contains the foundational project architecture and development structure. Individual modules and features are being implemented incrementally.
-
----
-
-## License
-
-This project is licensed under the terms specified in the [`LICENSE`](LICENSE) file.
+Nexus Career is an active university software-engineering project. Refer to the SRS and the module-specific documentation in `docs/` for the intended product scope. The repository's implemented API surface is narrower than the full SRS and is being expanded incrementally.
