@@ -269,8 +269,7 @@
 :root[data-theme="dark"] .auth-brand { color: var(--accent); }
 :root[data-theme="dark"] .auth-card h1 { color: var(--text-strong); }
 :root[data-theme="dark"] .auth-subtitle,
-:root[data-theme="dark"] .auth-footer,
-:root[data-theme="dark"] .auth-file-name { color: var(--text-muted); }
+:root[data-theme="dark"] .auth-footer { color: var(--text-muted); }
 :root[data-theme="dark"] .auth-card label,
 :root[data-theme="dark"] .auth-role-fieldset legend { color: var(--text); }
 :root[data-theme="dark"] .auth-card input {
