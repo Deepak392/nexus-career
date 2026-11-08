@@ -13,6 +13,7 @@ export interface Opportunity {
   status: "PUBLISHED" | "PENDING_APPROVAL" | "CLOSED";
   source: "Internal" | "External";
   applicationMethod: "Apply on portal" | "External link";
+  externalApplicationUrl?: string;
   eligible?: boolean;
   matchScore?: number;
   deadline: string;

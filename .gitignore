@@ -18,9 +18,10 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Django generated files
+# Django generated and private files
 backend/staticfiles/
 backend/media/
+backend/private_media/
 
 # IDE settings
 .vscode/

@@ -7,7 +7,10 @@ React + TypeScript frontend built with Vite and React Router.
 - Home page and opportunities discovery UI
 - Opportunity search, filters, sorting, pagination, and detail pages
 - Save-opportunity state in browser local storage
-- Placeholder pages for saved jobs, applications, profile, and settings
+- Student academic profile and private PDF resume upload
+- Eligibility breakdown on opportunity details
+- Platform application submission and student status tracking
+- Light/dark theme preference
 
 ## Run locally
 
@@ -29,7 +32,7 @@ npm run build
 
 ## Integration status
 
-The opportunity list currently uses mock data from `src/mocks/opportunities.ts`. The sign-in button is a local UI demo and does not authenticate against Django. Backend API integration, real student authentication, saved-job persistence, and application submission are not yet implemented in this frontend.
+The opportunity list, detail, student profile, eligibility, login, and application workflows are integrated with the Django API. Saved-opportunity state remains browser-local. External applications open the URL provided by the recruiter and are not marked as submitted inside Nexus Career.
 
 
 ## Appearance preferences

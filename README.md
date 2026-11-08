@@ -2,7 +2,7 @@
 
 Nexus Career is a university careers platform for discovering jobs and internships and supporting student, recruiter, IPC, and alumni workflows.
 
-The repository is under active development. The current implementation includes Django REST API foundations, JWT authentication, student and alumni profiles, and read-only published-opportunity discovery. Some product areas described in the SRS (including recruiter management, applications, referrals, notifications, and analytics) are not yet implemented end to end.
+The repository is under active development. The current implementation includes JWT authentication, student and alumni profiles, recruiter company and opportunity approval workflows, published-opportunity discovery, profile-based eligibility evaluation, private PDF resume uploads, student platform applications, and application tracking. Referrals, notifications, analytics, and recruiter/IPC application review actions remain future increments.
 
 ## Technology stack
 
@@ -272,3 +272,12 @@ docker compose down -v
 ## Project status
 
 Nexus Career is an active university software-engineering project. Refer to the SRS and the module-specific documentation in `docs/` for the intended product scope. The repository's implemented API surface is narrower than the full SRS and is being expanded incrementally.
+
+
+## Student eligibility and applications
+
+Students can maintain their academic profile and PDF resume at /profile. The opportunity detail page now checks CGPA, graduation year, degree programme, department, and required skills against the published criteria. It explains each matching, unmet, or missing requirement before enabling application.
+
+Platform applications are submitted through the authenticated API and retain a private copy of the resume used at submission. Students can track their applications at /applications. External opportunities link directly to the recruiter's configured application URL; Nexus Career does not claim to track an external submission.
+
+See docs/student-eligibility-and-applications.md for the API contract and workflow details.
