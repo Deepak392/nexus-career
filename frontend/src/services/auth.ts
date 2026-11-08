@@ -5,6 +5,13 @@ const API_BASE_URL = (
 
 export type LoginRole = "STUDENT" | "ALUMNI" | "RECRUITER";
 
+export interface AlumniRegistrationDetails {
+  department: string;
+  degree_programme: string;
+  graduation_year: number;
+  graduation_proof: File;
+}
+
 export interface AuthUser {
   id: number;
   username: string;
@@ -182,12 +189,35 @@ export async function login(username: string, password: string): Promise<AuthUse
 export async function register(
   username: string,
   email: string,
-  password: string
+  password: string,
+  role: LoginRole,
+  alumniDetails?: AlumniRegistrationDetails
 ): Promise<AuthUser> {
-  await apiRequest<AuthUser>("/auth/register/", {
+  const formData = new FormData();
+  formData.append("username", username);
+  formData.append("email", email);
+  formData.append("password", password);
+  formData.append("role", role);
+
+  if (role === "ALUMNI") {
+    if (!alumniDetails) {
+      throw new Error("Alumni registration requires graduation details and proof.");
+    }
+    formData.append("department", alumniDetails.department);
+    formData.append("degree_programme", alumniDetails.degree_programme);
+    formData.append("graduation_year", String(alumniDetails.graduation_year));
+    formData.append("graduation_proof", alumniDetails.graduation_proof);
+  }
+
+  const createdUser = await apiRequest<AuthUser>("/auth/register/", {
     method: "POST",
-    body: JSON.stringify({ username, email, password }),
+    body: formData,
   });
+
+  if (createdUser.role !== role) {
+    throw new Error("The server created an account with an unexpected role. Please contact support.");
+  }
+
   return login(username, password);
 }
 
