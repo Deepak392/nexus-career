@@ -24,8 +24,6 @@ export default function IpcDashboardPage() {
   const [notice, setNotice] = useState("");
 
   const loadQueues = useCallback(async () => {
-    setLoading(true);
-    setError("");
     try {
       const [pendingCompanies, pendingOpportunities] = await Promise.all([
         getPendingCompanies(),
@@ -33,12 +31,18 @@ export default function IpcDashboardPage() {
       ]);
       setCompanies(pendingCompanies);
       setOpportunities(pendingOpportunities);
+      setError("");
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }, []);
+
+  async function refreshQueues() {
+    setLoading(true);
+    await loadQueues();
+  }
 
   useEffect(() => {
     void loadQueues();
@@ -75,7 +79,7 @@ export default function IpcDashboardPage() {
           <h1>Approval dashboard</h1>
           <p className="workflow-subtitle">Verify companies and review job or internship submissions.</p>
         </div>
-        <button className="workflow-button secondary" onClick={() => void loadQueues()}>Refresh queues</button>
+        <button className="workflow-button secondary" onClick={() => void refreshQueues()}>Refresh queues</button>
       </header>
 
       {error && <div className="workflow-alert error" role="alert">{error}</div>}

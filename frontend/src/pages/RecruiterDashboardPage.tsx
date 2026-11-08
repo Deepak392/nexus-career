@@ -159,19 +159,19 @@ export default function RecruiterDashboardPage() {
   }), [opportunities]);
 
   const loadWorkspace = useCallback(async () => {
-    setLoading(true);
-    setError("");
     try {
       const currentCompany = await getCompanyProfile();
       setCompany(currentCompany);
       setCompanyForm(toCompanyForm(currentCompany));
       setCompanyFormOpen(false);
       setOpportunities(await getRecruiterOpportunities());
+      setError("");
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setCompany(null);
         setOpportunities([]);
         setCompanyFormOpen(true);
+        setError("");
       } else {
         setError(getApiErrorMessage(err));
       }
@@ -179,6 +179,11 @@ export default function RecruiterDashboardPage() {
       setLoading(false);
     }
   }, []);
+
+  async function refreshWorkspace() {
+    setLoading(true);
+    await loadWorkspace();
+  }
 
   useEffect(() => {
     void loadWorkspace();
@@ -354,7 +359,7 @@ export default function RecruiterDashboardPage() {
       <section className="workflow-panel">
         <div className="workflow-panel-heading">
           <div><h2>Your opportunities</h2><p>Only records associated with your company are shown.</p></div>
-          <button className="workflow-button secondary" onClick={() => void loadWorkspace()}>Refresh</button>
+          <button className="workflow-button secondary" onClick={() => void refreshWorkspace()}>Refresh</button>
         </div>
         {opportunities.length === 0 ? (
           <div className="workflow-empty">No opportunities yet. Create your first draft above.</div>
