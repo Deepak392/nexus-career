@@ -1,7 +1,10 @@
-
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
+
+from apps.alumni.models import AlumniProfile
 
 
 User = get_user_model()
@@ -37,13 +40,132 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(new_user.role, User.Role.STUDENT)
         self.assertTrue(new_user.check_password("AnotherSecurePassword123!X"))
 
-    def test_registration_rejects_invalid_email_domain(self):
+    def test_recruiter_registration_assigns_recruiter_role(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "newrecruiter",
+                "email": "recruiter@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "RECRUITER",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recruiter = User.objects.get(username="newrecruiter")
+        self.assertEqual(recruiter.role, User.Role.RECRUITER)
+        self.assertEqual(response.data["role"], User.Role.RECRUITER)
+
+    def test_alumni_registration_creates_pending_profile(self):
+        with self.settings(MEDIA_ROOT="/tmp/nexus-career-test-media"):
+            proof = SimpleUploadedFile(
+                "graduation-certificate.pdf",
+                b"%PDF-1.4 sample graduation certificate",
+                content_type="application/pdf",
+            )
+            response = self.client.post(
+                "/api/v1/auth/register/",
+                {
+                    "username": "newalumni",
+                    "email": "alumni@example.com",
+                    "password": "AnotherSecurePassword123!X",
+                    "role": "ALUMNI",
+                    "department": "Computer Science",
+                    "degree_programme": "B.Tech",
+                    "graduation_year": "2024",
+                    "graduation_proof": proof,
+                },
+                format="multipart",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        alumni = User.objects.get(username="newalumni")
+        profile = AlumniProfile.objects.get(user=alumni)
+
+        self.assertEqual(alumni.role, User.Role.ALUMNI)
+        self.assertEqual(response.data["role"], User.Role.ALUMNI)
+        self.assertEqual(profile.department, "Computer Science")
+        self.assertEqual(profile.degree_programme, "B.Tech")
+        self.assertEqual(profile.graduation_year, 2024)
+        self.assertEqual(
+            profile.verification_status,
+            AlumniProfile.VerificationStatus.PENDING,
+        )
+        self.assertTrue(profile.graduation_proof.name.endswith(".pdf"))
+        self.assertNotIn(
+            "graduation-certificate",
+            profile.graduation_proof.name,
+        )
+
+    def test_alumni_registration_requires_graduation_proof(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "missingproof",
+                "email": "missingproof@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "ALUMNI",
+                "department": "Computer Science",
+                "degree_programme": "B.Tech",
+                "graduation_year": 2024,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("graduation_proof", response.data)
+        self.assertFalse(User.objects.filter(username="missingproof").exists())
+
+    def test_alumni_registration_rejects_invalid_pdf_signature(self):
+        proof = SimpleUploadedFile(
+            "not-a-certificate.pdf",
+            b"this is not a PDF",
+            content_type="application/pdf",
+        )
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "invalidproof",
+                "email": "invalidproof@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "ALUMNI",
+                "department": "Computer Science",
+                "degree_programme": "B.Tech",
+                "graduation_year": 2024,
+                "graduation_proof": proof,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.filter(username="invalidproof").exists())
+
+    def test_registration_rejects_privileged_role_assignment(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "selfappointedadmin",
+                "email": "admin@example.com",
+                "password": "AnotherSecurePassword123!X",
+                "role": "IPC_ADMIN",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            User.objects.filter(username="selfappointedadmin").exists()
+        )
+
+    def test_registration_rejects_invalid_student_email_domain(self):
         response = self.client.post(
             "/api/v1/auth/register/",
             {
                 "username": "invalidstudent",
                 "email": "student@example.com",
                 "password": "AnotherSecurePassword123!X",
+                "role": "STUDENT",
             },
             format="json",
         )
