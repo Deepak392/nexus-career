@@ -30,16 +30,11 @@ class CompanyVerifyView(APIView):
 
     @extend_schema(request=None, responses=CompanyProfileSerializer)
     @transaction.atomic
-    @extend_schema(request=RejectionReasonSerializer, responses=CompanyProfileSerializer)
-    @transaction.atomic
-    @extend_schema(request=None, responses=OpportunitySerializer)
-    @transaction.atomic
-    @extend_schema(request=RejectionReasonSerializer, responses=OpportunitySerializer)
-    @transaction.atomic
     def post(self, request, pk):
         company = get_object_or_404(Company, pk=pk)
         if company.verification_status == Company.VerificationStatus.VERIFIED:
             raise ValidationError({"detail": "Company is already verified."})
+
         now = timezone.now()
         company.verification_status = Company.VerificationStatus.VERIFIED
         company.verification_rejection_reason = ""
@@ -70,12 +65,18 @@ class CompanyVerifyView(APIView):
 class CompanyRejectView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsIPCAdmin]
 
+    @extend_schema(
+        request=RejectionReasonSerializer,
+        responses=CompanyProfileSerializer,
+    )
+    @transaction.atomic
     def post(self, request, pk):
         company = get_object_or_404(Company, pk=pk)
         if company.verification_status == Company.VerificationStatus.VERIFIED:
             raise ValidationError(
                 {"detail": "A verified company cannot be rejected without a new review."}
             )
+
         serializer = RejectionReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reason = serializer.validated_data["reason"]
@@ -122,6 +123,8 @@ class PendingOpportunityListView(generics.ListAPIView):
 class OpportunityApproveView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsIPCAdmin]
 
+    @extend_schema(request=None, responses=OpportunitySerializer)
+    @transaction.atomic
     def post(self, request, pk):
         opportunity = get_object_or_404(
             Opportunity.objects.select_related("company"),
@@ -139,6 +142,7 @@ class OpportunityApproveView(APIView):
             raise ValidationError(
                 {"application_deadline": "Expired opportunities cannot be published."}
             )
+
         now = timezone.now()
         opportunity.status = Opportunity.Status.PUBLISHED
         opportunity.approved_by = request.user
@@ -167,12 +171,18 @@ class OpportunityApproveView(APIView):
 class OpportunityRejectView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsIPCAdmin]
 
+    @extend_schema(
+        request=RejectionReasonSerializer,
+        responses=OpportunitySerializer,
+    )
+    @transaction.atomic
     def post(self, request, pk):
         opportunity = get_object_or_404(Opportunity, pk=pk)
         if opportunity.status != Opportunity.Status.PENDING_APPROVAL:
             raise ValidationError(
                 {"detail": "Only pending opportunities can be rejected."}
             )
+
         serializer = RejectionReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reason = serializer.validated_data["reason"]
