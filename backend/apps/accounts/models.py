@@ -15,6 +15,7 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
+        default=Role.SYSTEM_ADMIN,
     )
 
     is_verified = models.BooleanField(default=False)
