@@ -1,12 +1,5 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
-
-
-def alumni_graduation_proof_upload_path(instance, filename):
-    """Store proof documents under generated names, not client filenames."""
-    return f"alumni/graduation_proofs/{uuid.uuid4().hex}.pdf"
 
 
 class AlumniProfile(models.Model):
@@ -33,7 +26,7 @@ class AlumniProfile(models.Model):
     is_open_to_referrals = models.BooleanField(default=False)
 
     graduation_proof = models.FileField(
-        upload_to=alumni_graduation_proof_upload_path,
+        upload_to="alumni/graduation_proofs/",
         null=True,
         blank=True,
     )
