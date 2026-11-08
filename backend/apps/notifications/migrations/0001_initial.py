@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="notification",
-            index=models.Index(fields=["recipient", "read_at", "created_at"], name="notification_recipient_read_idx"),
+            index=models.Index(fields=["recipient", "read_at", "created_at"], name="notif_recipient_read_idx"),
         ),
     ]
