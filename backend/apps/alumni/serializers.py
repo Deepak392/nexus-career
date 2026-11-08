@@ -51,5 +51,5 @@ class AlumniSearchSerializer(serializers.ModelSerializer):
             "is_open_to_referrals",
         ]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return obj.user.get_full_name() or obj.user.username
