@@ -72,3 +72,15 @@
   .app-shell { flex-direction: column; }
   .sidebar { width: 100%; height: auto; position: static; border-right: 0; border-bottom: 1px solid #eee; }
 }
+
+.auth-nav-links {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  font-size: 0.85rem;
+}
+
+.auth-nav-links a {
+  color: #4338ca;
+  text-decoration: underline;
+}

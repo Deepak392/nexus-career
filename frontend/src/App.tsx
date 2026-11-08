@@ -1,19 +1,64 @@
-﻿import { RouterProvider, createBrowserRouter } from "react-router-dom";
+﻿
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
 import Layout from "./Layout";
 import Home from "./Home";
 import SimplePage from "./SimplePage";
+
 import { opportunityRoutes } from "./features/opportunities/routes";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { path: "/", element: <Home /> },
+
+      // Authentication
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+
+      // Opportunities
       ...opportunityRoutes,
-      { path: "/saved", element: <SimplePage title="My Saved Jobs" text="Jobs you save will appear here." /> },
-      { path: "/applications", element: <SimplePage title="My Applications" text="Track your applications here." /> },
-      { path: "/profile", element: <SimplePage title="Profile" text="Your profile details will appear here." /> },
-      { path: "/settings", element: <SimplePage title="Settings" text="Account settings will appear here." /> },
+
+      // Other application pages
+      {
+        path: "/saved",
+        element: (
+          <SimplePage
+            title="My Saved Jobs"
+            text="Jobs you save will appear here."
+          />
+        ),
+      },
+      {
+        path: "/applications",
+        element: (
+          <SimplePage
+            title="My Applications"
+            text="Track your applications here."
+          />
+        ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <SimplePage
+            title="Profile"
+            text="Your profile details will appear here."
+          />
+        ),
+      },
+      {
+        path: "/settings",
+        element: (
+          <SimplePage
+            title="Settings"
+            text="Account settings will appear here."
+          />
+        ),
+      },
     ],
   },
 ]);
