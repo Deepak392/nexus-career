@@ -9,7 +9,6 @@ export interface AlumniRegistrationDetails {
   department: string;
   degree_programme: string;
   graduation_year: number;
-  graduation_proof: File;
 }
 
 export interface AuthUser {
@@ -201,12 +200,11 @@ export async function register(
 
   if (role === "ALUMNI") {
     if (!alumniDetails) {
-      throw new Error("Alumni registration requires graduation details and proof.");
+      throw new Error("Alumni registration requires graduation details.");
     }
     formData.append("department", alumniDetails.department);
     formData.append("degree_programme", alumniDetails.degree_programme);
     formData.append("graduation_year", String(alumniDetails.graduation_year));
-    formData.append("graduation_proof", alumniDetails.graduation_proof);
   }
 
   const createdUser = await apiRequest<AuthUser>("/auth/register/", {
