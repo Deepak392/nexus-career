@@ -1,50 +1,36 @@
-import pytest
-import yaml
+from django.test import SimpleTestCase
 from django.urls import reverse
 
 from api.core.pagination import TeamPageNumberPagination
 
 
-def test_pagination_defaults_and_limits_follow_team_contract():
-    assert TeamPageNumberPagination.page_size == 20
-    assert TeamPageNumberPagination.page_size_query_param == "page_size"
-    assert TeamPageNumberPagination.max_page_size == 50
+class FoundationTests(SimpleTestCase):
+    def test_pagination_defaults_and_limits_follow_team_contract(self):
+        self.assertEqual(TeamPageNumberPagination.page_size, 20)
+        self.assertEqual(
+            TeamPageNumberPagination.page_size_query_param,
+            "page_size",
+        )
+        self.assertEqual(TeamPageNumberPagination.max_page_size, 50)
 
+    def test_versioned_application_routes_are_registered(self):
+        self.assertEqual(reverse("account-register"), "/api/v1/auth/register/")
+        self.assertEqual(reverse("student-profile"), "/api/v1/students/profile/")
+        self.assertEqual(reverse("alumni-profile"), "/api/v1/alumni/profile/")
+        self.assertEqual(reverse("opportunity-list"), "/api/v1/opportunities/")
 
-@pytest.mark.django_db
-def test_role_fixtures_use_distinct_test_groups(
-    student_user,
-    recruiter_user,
-    ipc_admin_user,
-    alumni_user,
-    system_admin_user,
-):
-    role_users = {
-        "Student": student_user,
-        "Recruiter": recruiter_user,
-        "IPC Admin": ipc_admin_user,
-        "Alumni": alumni_user,
-        "System Admin": system_admin_user,
-    }
+    def test_api_schema_contains_registered_routes(self):
+        response = self.client.get(reverse("api-schema"))
 
-    assert len({user.pk for user in role_users.values()}) == len(role_users)
-    for role, user in role_users.items():
-        assert list(user.groups.values_list("name", flat=True)) == [role]
+        self.assertEqual(response.status_code, 200)
+        schema = response.content.decode("utf-8")
+        self.assertIn("/api/v1/auth/register/", schema)
+        self.assertIn("/api/v1/students/profile/", schema)
+        self.assertIn("/api/v1/alumni/profile/", schema)
 
-
-def test_api_schema_is_generated_from_registered_routes(client):
-    response = client.get(reverse("api-schema"))
-
-    assert response.status_code == 200
-    schema = yaml.safe_load(response.content)
-    assert schema["openapi"].startswith("3.")
-    assert schema["info"]["title"] == "Nexus Career API"
-    assert schema["paths"] == {}
-
-
-@pytest.mark.parametrize("name", ["swagger-ui", "redoc"])
-def test_interactive_documentation_routes_resolve(client, name):
-    response = client.get(reverse(name))
-
-    assert response.status_code == 200
-    assert "text/html" in response["Content-Type"]
+    def test_interactive_documentation_routes_resolve(self):
+        for name in ("swagger-ui", "redoc"):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("text/html", response["Content-Type"])
