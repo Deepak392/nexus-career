@@ -1,3 +1,4 @@
+import os
 
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -24,12 +25,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         normalized_email = value.strip().lower()
-        allowed_domain = "@gmail.com"
+        allowed_domain = os.getenv(
+            "STUDENT_EMAIL_DOMAIN",
+            "scds.saiuniversity.edu.in",
+        ).strip().lower().lstrip("@")
+        email_domain = normalized_email.rpartition("@")[2]
 
-        if not normalized_email.endswith(allowed_domain):
+        if email_domain != allowed_domain:
             raise serializers.ValidationError(
-                "Student registration requires an email address "
-                "ending with @gmail.com"
+                "Student registration requires an authorized university "
+                f"email address ending in @{allowed_domain}."
             )
 
         if User.objects.filter(email__iexact=normalized_email).exists():
