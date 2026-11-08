@@ -42,7 +42,6 @@ export default function RegisterPage() {
   const [department, setDepartment] = useState("");
   const [degreeProgramme, setDegreeProgramme] = useState("");
   const [graduationYear, setGraduationYear] = useState("");
-  const [graduationProof, setGraduationProof] = useState<File | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -69,11 +68,6 @@ export default function RegisterPage() {
       return;
     }
 
-    if (selectedRole === "ALUMNI" && !graduationProof) {
-      setError("Upload your graduation proof to continue.");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -87,15 +81,14 @@ export default function RegisterPage() {
               department: department.trim(),
               degree_programme: degreeProgramme.trim(),
               graduation_year: Number(graduationYear),
-              graduation_proof: graduationProof as File,
             }
           : undefined
       );
 
       if (selectedRole === "ALUMNI") {
         setSuccess(
-          "Your alumni account has been created. Your graduation proof is awaiting review. " +
-          "Your profile will appear in alumni search only after it has been verified."
+          "Your alumni account has been created. Your alumni profile is pending verification. " +
+          "It will appear in alumni search after it has been verified."
         );
       } else {
         const destination = selectedRole === "RECRUITER" ? "/recruiter" : "/profile";
@@ -168,9 +161,8 @@ export default function RegisterPage() {
 
           {selectedRole === "ALUMNI" && (
             <div className="auth-info">
-              Alumni registration requires your academic details and a PDF
-              proof of graduation. Your alumni profile will remain pending
-              until it is reviewed.
+              Provide your academic details to create an alumni account.
+              Your alumni profile will remain pending until it is reviewed.
             </div>
           )}
 
@@ -252,27 +244,6 @@ export default function RegisterPage() {
                 required
               />
 
-              <label htmlFor="graduation-proof">Proof of graduation (PDF, max 5 MB)</label>
-              <input
-                id="graduation-proof"
-                type="file"
-                accept="application/pdf,.pdf"
-                required
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  if (file && file.size > 5 * 1024 * 1024) {
-                    setGraduationProof(null);
-                    event.target.value = "";
-                    setError("Graduation proof must be 5 MB or smaller.");
-                    return;
-                  }
-                  setGraduationProof(file);
-                  setError("");
-                }}
-              />
-              {graduationProof && (
-                <p className="auth-file-name">Selected: {graduationProof.name}</p>
-              )}
             </>
           )}
 
