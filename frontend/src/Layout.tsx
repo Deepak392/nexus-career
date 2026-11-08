@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+
+import { useAuth } from "./context/AuthContext";
 import "./Layout.css";
 
 const links = [
@@ -12,47 +14,55 @@ const links = [
 ];
 
 export default function Layout() {
-  const [user, setUser] = useState<string | null>(() =>
-    localStorage.getItem("user")
-  );
+  const { user, isLoading, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const signIn = () => {
-    const name = "Varun Sundar";
-    localStorage.setItem("user", name);
-    setUser(name);
-  };
-
-  const signOut = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-  };
+  async function handleSignOut() {
+    await logout();
+    navigate("/login");
+  }
 
   const initials = user
-    ? user.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    ? user.username.slice(0, 2).toUpperCase()
     : "?";
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-brand">Opportunities Hub</div>
+        <div className="sidebar-brand">Nexus Career</div>
 
         <div className="sidebar-profile">
           <div className="avatar">{initials}</div>
+
           <div>
-            <p className="profile-name">{user ?? "Guest"}</p>
+            <p className="profile-name">
+              {isLoading ? "Loading..." : user?.username ?? "Guest"}
+            </p>
+
             {user ? (
-              <button className="profile-btn" onClick={signOut}>Sign out</button>
+              <>
+                <p className="muted">{user.role.replaceAll("_", " ")}</p>
+                <button
+                  className="profile-btn"
+                  onClick={() => void handleSignOut()}
+                >
+                  Sign out
+                </button>
+              </>
             ) : (
-              <button className="profile-btn" onClick={signIn}>Sign in</button>
+              <div className="auth-nav-links">
+                <NavLink to="/login">Sign in</NavLink>
+                <NavLink to="/register">Register</NavLink>
+              </div>
             )}
           </div>
         </div>
 
         <nav className="sidebar-nav">
-          {links.map((l) => (
-            <NavLink key={l.to} to={l.to} end={l.end}>
-              <span>{l.icon}</span>
-              {l.label}
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.to} end={link.end}>
+              <span>{link.icon}</span>
+              {link.label}
             </NavLink>
           ))}
         </nav>
