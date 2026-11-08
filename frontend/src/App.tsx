@@ -8,6 +8,9 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RecruiterDashboardPage from "./pages/RecruiterDashboardPage";
 import IpcDashboardPage from "./pages/IpcDashboardPage";
+import ApplicationsPage from "./pages/ApplicationsPage";
+import StudentProfilePage from "./pages/StudentProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
 import RequireRole from "./components/RequireRole";
 
 const router = createBrowserRouter([
@@ -27,8 +30,9 @@ const router = createBrowserRouter([
         element: <RequireRole allowedRoles={["IPC_ADMIN"]}><IpcDashboardPage /></RequireRole>,
       },
       { path: "/saved", element: <SimplePage title="My Saved Jobs" text="Jobs you save will appear here." /> },
-      { path: "/applications", element: <SimplePage title="My Applications" text="Track your applications here." /> },
-      { path: "/profile", element: <SimplePage title="Profile" text="Your profile details will appear here." /> },
+      { path: "/applications", element: <ApplicationsPage /> },
+      { path: "/notifications", element: <NotificationsPage /> },
+      { path: "/profile", element: <StudentProfilePage /> },
       { path: "/settings", element: <SimplePage title="Settings" text="Account settings will appear here." /> },
     ],
   },

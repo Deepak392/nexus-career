@@ -10,16 +10,11 @@ from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 
-# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
-
-# Load the project-level environment file for local development.
 load_dotenv(PROJECT_ROOT / ".env")
 
-# Security settings
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
-
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     if not DEBUG:
@@ -30,12 +25,9 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv(
-        "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
-    ).split(",")
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
-
 CORS_ALLOWED_ORIGINS = [
     origin.strip().rstrip("/")
     for origin in os.getenv(
@@ -45,27 +37,23 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-# Application definition
 INSTALLED_APPS = [
-    # Django built-in applications
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
-    # Third-party applications
     "rest_framework",
     "drf_spectacular",
     "corsheaders",
     "rest_framework_simplejwt.token_blacklist",
-
-    # Nexus Career applications
     "apps.accounts.apps.AccountsConfig",
     "apps.students.apps.StudentsConfig",
     "apps.recruiters.apps.RecruitersConfig",
     "apps.opportunities.apps.OpportunitiesConfig",
+    "apps.applications.apps.ApplicationsConfig",
+    "apps.notifications.apps.NotificationsConfig",
     "apps.alumni.apps.AlumniConfig",
 ]
 
@@ -101,7 +89,6 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-# Database
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -126,6 +113,11 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+
+# Keep resume files outside static/public URL routing.
+MEDIA_ROOT = Path(os.environ.get("PRIVATE_MEDIA_ROOT", BASE_DIR / "private_media"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {

@@ -9,6 +9,7 @@ const studentLinks = [
   { to: "/opportunities", label: "Opportunities", icon: "💼", end: false },
   { to: "/saved", label: "My Saved Jobs", icon: "🔖", end: false },
   { to: "/applications", label: "My Applications", icon: "📄", end: false },
+  { to: "/notifications", label: "Notifications", icon: "🔔", end: false },
   { to: "/profile", label: "Profile", icon: "👤", end: false },
   { to: "/settings", label: "Settings", icon: "⚙️", end: false },
 ];

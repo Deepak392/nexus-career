@@ -1,4 +1,6 @@
 import type { Opportunity, OpportunityQuery, PaginatedResponse } from "../../types";
+import { authenticatedRequest } from "../../services/auth";
+import type { EligibilityResult } from "../../services/student";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1"
@@ -42,25 +44,20 @@ export const sourceOptions = ["Internal", "External"];
 function formatEligibility(criteria: Record<string, unknown>): string {
   const parts: string[] = [];
   const cgpa = criteria.minimum_cgpa;
-  if (typeof cgpa === "number") {
-    parts.push(`Minimum CGPA: ${cgpa.toFixed(1)}`);
-  }
+  if (typeof cgpa === "number") parts.push("Minimum CGPA: " + cgpa.toFixed(1));
 
   const graduationYears = criteria.graduation_years;
   if (Array.isArray(graduationYears) && graduationYears.length > 0) {
-    parts.push(`Graduation years: ${graduationYears.join(", ")}`);
+    parts.push("Graduation years: " + graduationYears.join(", "));
   }
-
   const programmes = criteria.degree_programmes;
   if (Array.isArray(programmes) && programmes.length > 0) {
-    parts.push(`Programmes: ${programmes.join(", ")}`);
+    parts.push("Programmes: " + programmes.join(", "));
   }
-
   const departments = criteria.departments;
   if (Array.isArray(departments) && departments.length > 0) {
-    parts.push(`Departments: ${departments.join(", ")}`);
+    parts.push("Departments: " + departments.join(", "));
   }
-
   return parts.length > 0
     ? parts.join(" · ")
     : "Eligibility criteria have not been specified.";
@@ -73,11 +70,8 @@ function mapOpportunity(record: ApiOpportunity): Opportunity {
     REMOTE: "Remote",
   }[record.work_mode] as Opportunity["mode"];
 
-  const skills = Array.isArray(record.required_skills)
-    ? record.required_skills
-    : [];
+  const skills = Array.isArray(record.required_skills) ? record.required_skills : [];
   const eligibility = formatEligibility(record.eligibility_criteria ?? {});
-  const deadline = record.application_deadline;
 
   return {
     id: String(record.id),
@@ -92,15 +86,15 @@ function mapOpportunity(record: ApiOpportunity): Opportunity {
     postedBy: "Recruiter",
     status: "PUBLISHED",
     source: record.application_method === "EXTERNAL" ? "External" : "Internal",
-    applicationMethod:
-      record.application_method === "EXTERNAL" ? "External link" : "Apply on portal",
-    deadline,
+    applicationMethod: record.application_method === "EXTERNAL" ? "External link" : "Apply on portal",
+    externalApplicationUrl: record.external_application_url,
+    deadline: record.application_deadline,
     postedAt: record.published_at ?? record.created_at,
     description: record.description,
     requirements: [
-      ...(skills.length > 0 ? [`Required skills: ${skills.join(", ")}`] : []),
-      `Eligibility: ${eligibility}`,
-      ...(record.start_date ? [`Expected start date: ${record.start_date}`] : []),
+      ...(skills.length > 0 ? ["Required skills: " + skills.join(", ")] : []),
+      "Eligibility: " + eligibility,
+      ...(record.start_date ? ["Expected start date: " + record.start_date] : []),
     ],
   };
 }
@@ -108,9 +102,7 @@ function mapOpportunity(record: ApiOpportunity): Opportunity {
 async function fetchJson<T>(url: string): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
-      headers: { Accept: "application/json" },
-    });
+    response = await fetch(url, { headers: { Accept: "application/json" } });
   } catch {
     throw new Error("Cannot connect to the Nexus Career backend.");
   }
@@ -131,21 +123,17 @@ function buildQuery(query: OpportunityQuery): URLSearchParams {
   params.set("page", String(query.page && query.page > 0 ? query.page : 1));
   params.set("page_size", String(query.limit ?? 9));
 
-  if (query.search?.trim()) {
-    params.set("search", query.search.trim());
-  }
+  if (query.search?.trim()) params.set("search", query.search.trim());
   if (query.type) {
     params.set("opportunity_type", query.type === "Internship" ? "INTERNSHIP" : "JOB");
   }
   if (query.mode) {
     params.set(
       "work_mode",
-      query.mode === "On-site" ? "ONSITE" : query.mode.toUpperCase()
+      query.mode === "On-site" ? "ONSITE" : query.mode.toUpperCase(),
     );
   }
-  if (query.location?.trim()) {
-    params.set("location", query.location.trim());
-  }
+  if (query.location?.trim()) params.set("location", query.location.trim());
   if (query.source) {
     params.set("application_method", query.source === "External" ? "EXTERNAL" : "PLATFORM");
   }
@@ -155,19 +143,18 @@ function buildQuery(query: OpportunityQuery): URLSearchParams {
       ? "deadline"
       : query.sort === "title"
         ? "title"
-        : "newest"
+        : "newest",
   );
   return params;
 }
 
 export async function getOpportunities(
-  query: OpportunityQuery
+  query: OpportunityQuery,
 ): Promise<PaginatedResponse<Opportunity>> {
   const params = buildQuery(query);
   const page = await fetchJson<ApiPage<ApiOpportunity>>(
-    `${API_BASE_URL}/opportunities/?${params.toString()}`
+    API_BASE_URL + "/opportunities/?" + params.toString(),
   );
-
   return {
     items: page.results.map(mapOpportunity),
     total: page.count,
@@ -179,21 +166,24 @@ export async function getOpportunities(
 export async function getOpportunityById(id: string): Promise<Opportunity | null> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}/opportunities/${encodeURIComponent(id)}/`, {
-      headers: { Accept: "application/json" },
-    });
+    response = await fetch(
+      API_BASE_URL + "/opportunities/" + encodeURIComponent(id) + "/",
+      { headers: { Accept: "application/json" } },
+    );
   } catch {
     throw new Error("Cannot connect to the Nexus Career backend.");
   }
 
-  if (response.status === 404) {
-    return null;
-  }
+  if (response.status === 404) return null;
   const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error("Failed to load this opportunity.");
-  }
+  if (!response.ok) throw new Error("Failed to load this opportunity.");
   return mapOpportunity(data as ApiOpportunity);
+}
+
+export async function getOpportunityEligibility(id: string): Promise<EligibilityResult> {
+  return authenticatedRequest<EligibilityResult>(
+    "/opportunities/" + encodeURIComponent(id) + "/eligibility/",
+  );
 }
 
 const SAVED_KEY = "savedOpportunityIds";
