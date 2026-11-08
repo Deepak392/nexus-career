@@ -27,6 +27,7 @@ export default function LoginPage() {
     | null;
 
   const redirectTo = locationState?.from?.pathname || "/";
+  const selectedAccountType = accountTypes.find((item) => item.role === selectedRole);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,7 +122,7 @@ export default function LoginPage() {
 
         <p className="auth-footer">
           Don't have an account?{" "}
-          <Link to="/register">Create an account</Link>
+          <Link to={`/register?role=${selectedRole}`}>Create a {selectedAccountType?.label ?? "Student"} account</Link>
         </p>
       </div>
     </section>
