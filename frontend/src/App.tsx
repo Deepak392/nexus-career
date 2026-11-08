@@ -1,64 +1,35 @@
-﻿
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import Layout from "./Layout";
 import Home from "./Home";
 import SimplePage from "./SimplePage";
-
 import { opportunityRoutes } from "./features/opportunities/routes";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import RecruiterDashboardPage from "./pages/RecruiterDashboardPage";
+import IpcDashboardPage from "./pages/IpcDashboardPage";
+import RequireRole from "./components/RequireRole";
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { path: "/", element: <Home /> },
-
-      // Authentication
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
-
-      // Opportunities
       ...opportunityRoutes,
-
-      // Other application pages
       {
-        path: "/saved",
-        element: (
-          <SimplePage
-            title="My Saved Jobs"
-            text="Jobs you save will appear here."
-          />
-        ),
+        path: "/recruiter",
+        element: <RequireRole allowedRoles={["RECRUITER"]}><RecruiterDashboardPage /></RequireRole>,
       },
       {
-        path: "/applications",
-        element: (
-          <SimplePage
-            title="My Applications"
-            text="Track your applications here."
-          />
-        ),
+        path: "/ipc",
+        element: <RequireRole allowedRoles={["IPC_ADMIN"]}><IpcDashboardPage /></RequireRole>,
       },
-      {
-        path: "/profile",
-        element: (
-          <SimplePage
-            title="Profile"
-            text="Your profile details will appear here."
-          />
-        ),
-      },
-      {
-        path: "/settings",
-        element: (
-          <SimplePage
-            title="Settings"
-            text="Account settings will appear here."
-          />
-        ),
-      },
+      { path: "/saved", element: <SimplePage title="My Saved Jobs" text="Jobs you save will appear here." /> },
+      { path: "/applications", element: <SimplePage title="My Applications" text="Track your applications here." /> },
+      { path: "/profile", element: <SimplePage title="Profile" text="Your profile details will appear here." /> },
+      { path: "/settings", element: <SimplePage title="Settings" text="Account settings will appear here." /> },
     ],
   },
 ]);

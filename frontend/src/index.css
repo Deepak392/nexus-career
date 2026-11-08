@@ -39,3 +39,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .filter-toggle { display: none; }
   .filters, .filters.open { display: flex; flex-direction: row; }
 }
+
+
+.filters input {
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.95rem;
+}

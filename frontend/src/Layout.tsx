@@ -1,10 +1,9 @@
-
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
 import "./Layout.css";
 
-const links = [
+const studentLinks = [
   { to: "/", label: "Home", icon: "🏠", end: true },
   { to: "/opportunities", label: "Opportunities", icon: "💼", end: false },
   { to: "/saved", label: "My Saved Jobs", icon: "🔖", end: false },
@@ -22,32 +21,30 @@ export default function Layout() {
     navigate("/login");
   }
 
-  const initials = user
-    ? user.username.slice(0, 2).toUpperCase()
-    : "?";
+  const initials = user ? user.username.slice(0, 2).toUpperCase() : "?";
+  const links = [
+    ...studentLinks.slice(0, 2),
+    ...(user?.role === "RECRUITER"
+      ? [{ to: "/recruiter", label: "Recruiter dashboard", icon: "🏢", end: false }]
+      : []),
+    ...(user?.role === "IPC_ADMIN"
+      ? [{ to: "/ipc", label: "IPC approvals", icon: "✅", end: false }]
+      : []),
+    ...studentLinks.slice(2),
+  ];
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">Nexus Career</div>
-
         <div className="sidebar-profile">
           <div className="avatar">{initials}</div>
-
           <div>
-            <p className="profile-name">
-              {isLoading ? "Loading..." : user?.username ?? "Guest"}
-            </p>
-
+            <p className="profile-name">{isLoading ? "Loading..." : user?.username ?? "Guest"}</p>
             {user ? (
               <>
                 <p className="muted">{user.role.replaceAll("_", " ")}</p>
-                <button
-                  className="profile-btn"
-                  onClick={() => void handleSignOut()}
-                >
-                  Sign out
-                </button>
+                <button className="profile-btn" onClick={() => void handleSignOut()}>Sign out</button>
               </>
             ) : (
               <div className="auth-nav-links">
@@ -57,7 +54,6 @@ export default function Layout() {
             )}
           </div>
         </div>
-
         <nav className="sidebar-nav">
           {links.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}>
@@ -67,10 +63,7 @@ export default function Layout() {
           ))}
         </nav>
       </aside>
-
-      <main className="app-main">
-        <Outlet />
-      </main>
+      <main className="app-main"><Outlet /></main>
     </div>
   );
 }
