@@ -3,6 +3,8 @@ const API_BASE_URL = (
   "http://localhost:8000/api/v1"
 ).replace(/\/$/, "");
 
+export type LoginRole = "STUDENT" | "ALUMNI" | "RECRUITER";
+
 export interface AuthUser {
   id: number;
   username: string;
