@@ -22,6 +22,7 @@ export default function AlumniNetworkPage() {
   const [company, setCompany] = useState("");
   const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState({ company: "", designation: "", department: "" });
   const [activeId, setActiveId] = useState<number | null>(null);
   const [form, setForm] = useState<ReferralForm>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -33,9 +34,9 @@ export default function AlumniNetworkPage() {
     setLoading(true);
     try {
       const response = await searchAlumni({
-        company,
-        designation,
-        department,
+        company: appliedFilters.company,
+        designation: appliedFilters.designation,
+        department: appliedFilters.department,
         available: true,
       });
       setAlumni(response.results);
@@ -46,14 +47,14 @@ export default function AlumniNetworkPage() {
     } finally {
       setLoading(false);
     }
-  }, [company, designation, department]);
+  }, [appliedFilters]);
 
   useEffect(() => { void loadAlumni(); }, [loadAlumni]);
 
   function handleFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice("");
-    void loadAlumni();
+    setAppliedFilters({ company, designation, department });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
