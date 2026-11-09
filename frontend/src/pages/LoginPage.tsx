@@ -50,6 +50,20 @@ export default function LoginPage() {
 
   return (
     <section className="auth-page">
+      <aside className="auth-visual">
+        <div className="auth-visual-brand"><span className="auth-visual-logo">N</span><span>Nexus Career</span></div>
+        <div className="auth-visual-copy">
+          <p className="auth-visual-eyebrow">THE CAMPUS CAREER NETWORK</p>
+          <h2>Your campus career network, connected.</h2>
+          <p>Discover opportunities, build professional connections and move from campus to career with a platform designed around your university community.</p>
+          <ul className="auth-visual-list">
+            <li><span>01</span> Find jobs and internships</li>
+            <li><span>02</span> Connect with verified alumni</li>
+            <li><span>03</span> Access university-reviewed opportunities</li>
+          </ul>
+        </div>
+        <p className="auth-visual-foot">NEXUS CAREER · UNIVERSITY CAREER PLATFORM</p>
+      </aside>
       <div className="auth-card">
         <div className="auth-brand">
           <span className="auth-logo">NC</span>
