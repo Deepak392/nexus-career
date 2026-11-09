@@ -12,6 +12,7 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     full_name = serializers.SerializerMethodField()
     email = serializers.EmailField(source="user.email", read_only=True)
+    has_graduation_proof = serializers.SerializerMethodField()
 
     class Meta:
         model = AlumniProfile
