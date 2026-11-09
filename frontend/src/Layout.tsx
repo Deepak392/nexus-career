@@ -20,11 +20,16 @@ const navigationByRole: Record<string, NavigationLink[]> = {
   STUDENT: [
     ...homeLinks,
     { to: "/applications", label: "Applications", icon: "▤" },
+    { to: "/alumni/network", label: "Alumni network", icon: "◎" },
+    { to: "/referrals", label: "My referrals", icon: "↗" },
     { to: "/notifications", label: "Notifications", icon: "◉" },
     { to: "/profile", label: "My profile", icon: "◌" },
   ],
   ALUMNI: [
-    ...homeLinks,
+    { to: "/", label: "Overview", icon: "⌂", end: true },
+    { to: "/alumni", label: "Alumni dashboard", icon: "▦" },
+    { to: "/alumni/profile", label: "Professional profile", icon: "◌" },
+    { to: "/alumni/referrals", label: "Referral requests", icon: "↗" },
     { to: "/notifications", label: "Notifications", icon: "◉" },
   ],
   RECRUITER: [
@@ -45,6 +50,11 @@ function areaLabel(pathname: string): string {
   if (pathname.startsWith("/login")) return "Sign in";
   if (pathname.startsWith("/opportunities")) return "Opportunities";
   if (pathname.startsWith("/applications")) return "Applications";
+  if (pathname.startsWith("/alumni/network")) return "Alumni network";
+  if (pathname.startsWith("/alumni/referrals")) return "Referral requests";
+  if (pathname.startsWith("/alumni/profile")) return "Professional profile";
+  if (pathname.startsWith("/alumni")) return "Alumni dashboard";
+  if (pathname.startsWith("/referrals")) return "My referrals";
   if (pathname.startsWith("/notifications")) return "Notifications";
   if (pathname.startsWith("/profile")) return "Profile";
   if (pathname.startsWith("/recruiter")) return "Recruiter workspace";
