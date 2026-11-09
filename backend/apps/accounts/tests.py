@@ -189,6 +189,7 @@ class AuthenticationTests(APITestCase):
                 "username": "duplicateuser",
                 "email": "EXISTINGSTUDENT@scds.saiuniversity.edu.in",
                 "password": "AnotherSecurePassword123!X",
+                "role": "STUDENT",
             },
             format="json",
         )
