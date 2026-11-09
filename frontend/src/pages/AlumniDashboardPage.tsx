@@ -83,6 +83,7 @@ export default function AlumniDashboardPage() {
       {profile?.verification_status !== "VERIFIED" && (
         <div className="alumni-alert info" role="status">
           Your alumni profile is {statusLabel(profile?.verification_status ?? "PENDING")}. Only verified alumni are visible in the student directory.
+          {profile?.verification_rejection_reason && <p>{profile.verification_rejection_reason}</p>}
         </div>
       )}
 
