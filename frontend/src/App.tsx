@@ -19,7 +19,9 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <Home /> },
       { path: "/login", element: <LoginPage /> },
+      { path: "/login/:role", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
+      { path: "/register/:role", element: <RegisterPage /> },
       ...opportunityRoutes,
       {
         path: "/recruiter",
