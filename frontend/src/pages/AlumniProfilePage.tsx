@@ -102,7 +102,9 @@ export default function AlumniProfilePage() {
         <span className={`alumni-status ${profile.verification_status.toLowerCase()}`}>{profile.verification_status.replaceAll("_", " ")}</span>
         <p>{profile.verification_status === "VERIFIED"
           ? "Your profile is verified and can be discovered by students when referral availability is enabled."
-          : "Your profile is pending university verification. It will be discoverable after it is verified."}</p>
+          : profile.verification_status === "REJECTED"
+            ? `Your profile was not verified. IPC feedback: ${profile.verification_rejection_reason || "Please contact the IPC for details."}`
+            : "Your profile is pending university verification. It will be discoverable after it is verified."}</p>
       </div>
 
       {error && <div className="alumni-alert error" role="alert">{error}</div>}
