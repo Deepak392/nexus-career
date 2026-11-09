@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getApiErrorMessage } from "../services/auth";
 import {
+  getPendingAlumni,
+  rejectAlumni,
+  verifyAlumni,
+  type AlumniReview,
+} from "../services/alumni";
+import {
   approveOpportunity,
   getPendingCompanies,
   getPendingOpportunities,
@@ -14,8 +20,10 @@ import {
 import "./WorkflowPages.css";
 
 export default function IpcDashboardPage() {
+  const [alumni, setAlumni] = useState<AlumniReview[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityRecord[]>([]);
+  const [alumniReasons, setAlumniReasons] = useState<Record<number, string>>({});
   const [companyReasons, setCompanyReasons] = useState<Record<number, string>>({});
   const [opportunityReasons, setOpportunityReasons] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
@@ -25,10 +33,12 @@ export default function IpcDashboardPage() {
 
   const loadQueues = useCallback(async () => {
     try {
-      const [pendingCompanies, pendingOpportunities] = await Promise.all([
+      const [pendingAlumni, pendingCompanies, pendingOpportunities] = await Promise.all([
+        getPendingAlumni(),
         getPendingCompanies(),
         getPendingOpportunities(),
       ]);
+      setAlumni(pendingAlumni);
       setCompanies(pendingCompanies);
       setOpportunities(pendingOpportunities);
       setError("");
@@ -94,9 +104,51 @@ export default function IpcDashboardPage() {
       {notice && <div className="workflow-alert success" role="status">{notice}</div>}
 
       <div className="workflow-stat-grid">
+        <div className="workflow-stat"><span>Alumni awaiting verification</span><strong>{alumni.length}</strong></div>
         <div className="workflow-stat"><span>Companies awaiting verification</span><strong>{companies.length}</strong></div>
         <div className="workflow-stat"><span>Opportunities awaiting approval</span><strong>{opportunities.length}</strong></div>
       </div>
+
+      <section className="workflow-panel">
+        <div className="workflow-panel-heading">
+          <div><h2>Alumni verification</h2><p>Review academic information before making an Alumni profile discoverable to students.</p></div>
+        </div>
+        {alumni.length === 0 ? (
+          <div className="workflow-empty">No Alumni profiles are waiting for verification.</div>
+        ) : (
+          <div className="workflow-list">
+            {alumni.map((profile) => (
+              <article className="workflow-list-card" key={profile.id}>
+                <div className="workflow-list-main">
+                  <div className="workflow-list-title"><h3>{profile.full_name}</h3><span className="workflow-status pending">PENDING</span></div>
+                  <p>{profile.email} · {profile.department} · {profile.degree_programme} · Class of {profile.graduation_year}</p>
+                  <p>{[profile.designation, profile.current_company, profile.industry].filter(Boolean).join(" · ") || "Professional details not provided"}</p>
+                  <label className="workflow-inline-field">
+                    Rejection reason
+                    <input
+                      value={alumniReasons[profile.id] ?? ""}
+                      onChange={(event) => setAlumniReasons({ ...alumniReasons, [profile.id]: event.target.value })}
+                      placeholder="Explain what needs to be corrected"
+                    />
+                  </label>
+                </div>
+                <div className="workflow-actions">
+                  <button
+                    className="workflow-button"
+                    disabled={busyKey !== ""}
+                    onClick={() => void performAction(`alumni-${profile.id}`, () => verifyAlumni(profile.id), `${profile.full_name} verified.`)}
+                  >{busyKey === `alumni-${profile.id}` ? "Verifying..." : "Verify Alumni"}</button>
+                  <button
+                    className="workflow-button danger"
+                    disabled={busyKey !== "" || (alumniReasons[profile.id] ?? "").trim().length < 5}
+                    onClick={() => void performAction(`alumni-reject-${profile.id}`, () => rejectAlumni(profile.id, alumniReasons[profile.id].trim()), `${profile.full_name} rejected.`)}
+                  >Reject</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="workflow-panel">
         <div className="workflow-panel-heading">
