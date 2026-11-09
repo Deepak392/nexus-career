@@ -8,6 +8,7 @@ class Notification(models.Model):
         REFERRAL_REQUEST = "REFERRAL_REQUEST", "New referral request"
         REFERRAL_STATUS = "REFERRAL_STATUS", "Referral request update"
         REFERRAL_MORE_INFO = "REFERRAL_MORE_INFO", "More information requested"
+        ALUMNI_VERIFICATION = "ALUMNI_VERIFICATION", "Alumni verification update"
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
