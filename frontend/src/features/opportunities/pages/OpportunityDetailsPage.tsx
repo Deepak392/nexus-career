@@ -158,7 +158,7 @@ export default function OpportunityDetailsPage() {
           {!user && (
             <div className="notice">
               <strong>Sign in with your student account to check eligibility.</strong>
-              <p><Link to="/login">Sign in</Link> or <Link to="/register">create a student account</Link>.</p>
+              <p><Link to="/login">Sign in</Link> or <Link to="/register?role=STUDENT">create a student account</Link>.</p>
             </div>
           )}
           {user && !isStudent && (
