@@ -42,7 +42,9 @@ export default function AlumniReferralsPage() {
     }
   }, []);
 
-  useEffect(() => { void loadRequests(); }, [loadRequests]);
+  useEffect(() => {
+    queueMicrotask(() => { void loadRequests(); });
+  }, [loadRequests]);
 
   async function runAction(
     item: ReferralRequest,
