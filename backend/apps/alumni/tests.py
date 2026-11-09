@@ -371,3 +371,103 @@ class AlumniReferralWorkflowTests(APITestCase):
         self.assertEqual(response.data["pending"], 1)
         self.assertEqual(response.data["student_interactions"], 1)
         self.assertTrue(response.data["is_open_to_referrals"])
+
+
+class AlumniVerificationWorkflowTests(APITestCase):
+    def setUp(self):
+        self.ipc_admin = User.objects.create_user(
+            username="ipc-alumni-reviewer",
+            email="ipc-alumni-reviewer@example.com",
+            password="TestPassword123!",
+            role=User.Role.IPC_ADMIN,
+        )
+        self.student = User.objects.create_user(
+            username="alumni-review-student",
+            email="alumni-review-student@example.com",
+            password="TestPassword123!",
+            role=User.Role.STUDENT,
+        )
+        self.alumni = User.objects.create_user(
+            username="pending-alumni-review",
+            email="pending-alumni-review@example.com",
+            password="TestPassword123!",
+            role=User.Role.ALUMNI,
+        )
+        self.profile = AlumniProfile.objects.create(
+            user=self.alumni,
+            department="Computer Science",
+            degree_programme="B.Tech",
+            graduation_year=2022,
+            current_company="Example Tech",
+            designation="Developer",
+            industry="Technology",
+            verification_status=AlumniProfile.VerificationStatus.PENDING,
+        )
+
+    def test_only_ipc_admin_can_view_pending_alumni_queue(self):
+        self.client.force_authenticate(user=self.ipc_admin)
+        response = self.client.get(reverse("ipc-pending-alumni"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], self.profile.pk)
+
+        self.client.force_authenticate(user=self.student)
+        denied = self.client.get(reverse("ipc-pending-alumni"))
+        self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_ipc_admin_can_verify_alumni_and_notify_user(self):
+        self.client.force_authenticate(user=self.ipc_admin)
+        response = self.client.post(
+            reverse("ipc-alumni-verify", args=[self.profile.pk])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.verification_status,
+            AlumniProfile.VerificationStatus.VERIFIED,
+        )
+        self.assertEqual(self.profile.reviewed_by, self.ipc_admin)
+        self.assertIsNotNone(self.profile.reviewed_at)
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=self.alumni,
+                notification_type=Notification.NotificationType.ALUMNI_VERIFICATION,
+            ).exists()
+        )
+
+    def test_ipc_admin_can_reject_alumni_with_reason(self):
+        self.client.force_authenticate(user=self.ipc_admin)
+        response = self.client.post(
+            reverse("ipc-alumni-reject", args=[self.profile.pk]),
+            {"reason": "Please clarify your graduation information."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.verification_status,
+            AlumniProfile.VerificationStatus.REJECTED,
+        )
+        self.assertEqual(
+            self.profile.verification_rejection_reason,
+            "Please clarify your graduation information.",
+        )
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=self.alumni,
+                title="Alumni profile needs attention",
+            ).exists()
+        )
+
+    def test_recruiter_cannot_verify_alumni(self):
+        recruiter = User.objects.create_user(
+            username="alumni-review-recruiter",
+            email="alumni-review-recruiter@example.com",
+            password="TestPassword123!",
+            role=User.Role.RECRUITER,
+        )
+        self.client.force_authenticate(user=recruiter)
+        response = self.client.post(
+            reverse("ipc-alumni-verify", args=[self.profile.pk])
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
