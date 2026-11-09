@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import {
@@ -34,10 +34,11 @@ const accountTypes: {
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedRole = searchParams.get("role");
+  const { role: routeRole } = useParams<{ role?: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedRole = routeRole ?? searchParams.get("role");
   const selectedRole =
-    accountTypes.find((accountType) => accountType.role === requestedRole)?.role ?? "STUDENT";
+    accountTypes.find((accountType) => accountType.role === requestedRole?.toUpperCase())?.role ?? "STUDENT";
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -137,7 +138,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() =>
                 navigate(
-                  requiresManualSignIn ? `/login?role=${selectedRole}` : "/",
+                  requiresManualSignIn ? `/login/${selectedRole.toLowerCase()}` : "/",
                   { replace: true }
                 )
               }
@@ -163,7 +164,7 @@ export default function RegisterPage() {
                   type="button"
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
-                    setSearchParams({ role: accountType.role }, { replace: true });
+                    navigate(`/register/${accountType.role.toLowerCase()}`, { replace: true });
                     setError("");
                   }}
                 >
@@ -305,7 +306,7 @@ export default function RegisterPage() {
 
         <p className="auth-footer">
           Already have a {selectedAccountType?.label ?? "Student"} account?{" "}
-          <Link to={`/login?role=${selectedRole}`}>Sign in as {selectedAccountType?.label ?? "Student"}</Link>
+          <Link to={`/login/${selectedRole.toLowerCase()}`}>Sign in as {selectedAccountType?.label ?? "Student"}</Link>
         </p>
       </div>
     </section>

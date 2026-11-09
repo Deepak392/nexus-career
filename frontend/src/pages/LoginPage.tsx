@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage, type LoginRole } from "../services/auth";
@@ -15,11 +15,12 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { role: routeRole } = useParams<{ role?: string }>();
+  const [searchParams] = useSearchParams();
 
-  const requestedRole = searchParams.get("role");
+  const requestedRole = routeRole ?? searchParams.get("role");
   const selectedRole =
-    accountTypes.find((item) => item.role === requestedRole)?.role ?? "STUDENT";
+    accountTypes.find((item) => item.role === requestedRole?.toUpperCase())?.role ?? "STUDENT";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -75,7 +76,7 @@ export default function LoginPage() {
                   type="button"
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
-                    setSearchParams({ role: accountType.role }, { replace: true });
+                    navigate(`/login/${accountType.role.toLowerCase()}`, { replace: true });
                     setError("");
                   }}
                 >
@@ -125,7 +126,7 @@ export default function LoginPage() {
 
         <p className="auth-footer">
           New to Nexus Career as a {selectedAccountType?.label ?? "Student"}?{" "}
-          <Link to={`/register?role=${selectedRole}`}>
+          <Link to={`/register/${selectedRole.toLowerCase()}`}>
             Create a {selectedAccountType?.label ?? "Student"} account
           </Link>
         </p>
