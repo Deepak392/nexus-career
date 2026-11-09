@@ -48,10 +48,10 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_has_graduation_proof(self, obj):
+    def get_has_graduation_proof(self, obj) -> bool:
         return bool(obj.graduation_proof and obj.graduation_proof.name)
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return obj.user.get_full_name() or obj.user.username
 
     def validate_graduation_year(self, value):
@@ -222,3 +222,17 @@ class AlumniVerificationActionSerializer(serializers.Serializer):
 
     def validate_reason(self, value):
         return value.strip()
+
+
+
+class AlumniEngagementMetricsSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    pending = serializers.IntegerField()
+    accepted = serializers.IntegerField()
+    referred = serializers.IntegerField()
+    declined = serializers.IntegerField()
+    student_interactions = serializers.IntegerField()
+    is_open_to_referrals = serializers.BooleanField()
+    verification_status = serializers.ChoiceField(
+        choices=AlumniProfile.VerificationStatus.choices
+    )
