@@ -29,7 +29,7 @@ class AlumniProfile(models.Model):
     is_open_to_referrals = models.BooleanField(default=False)
 
     graduation_proof = models.FileField(
-        upload_to="alumni/graduation_proofs/",
+        upload_to=graduation_proof_upload_path,
         null=True,
         blank=True,
     )
@@ -39,6 +39,23 @@ class AlumniProfile(models.Model):
         choices=VerificationStatus.choices,
         default=VerificationStatus.PENDING,
     )
+    verification_rejection_reason = models.TextField(blank=True)
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name=\"verified_alumni_profiles\",
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name=\"reviewed_alumni_profiles\",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -48,6 +65,11 @@ class AlumniProfile(models.Model):
 
     def __str__(self):
         return f"Alumni Profile: {self.user.username}"
+
+
+def graduation_proof_upload_path(instance, filename):
+    \"\"\"Store graduation evidence under an opaque private filename.\"\"\"
+    return f\"private/alumni-graduation-proofs/{uuid.uuid4().hex}.pdf\"
 
 
 def referral_resume_upload_path(instance, filename):
