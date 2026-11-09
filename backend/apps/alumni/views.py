@@ -53,19 +53,48 @@ class AlumniProfileView(
             status=status.HTTP_201_CREATED,
         )
 
+    @staticmethod
+    def save_profile_update(profile, serializer):
+        academic_fields = ("department", "degree_programme", "graduation_year")
+        academic_details_changed = any(
+            field in serializer.validated_data
+            and serializer.validated_data[field] != getattr(profile, field)
+            for field in academic_fields
+        )
+        profile = serializer.save()
+        if academic_details_changed:
+            profile.verification_status = AlumniProfile.VerificationStatus.PENDING
+            profile.verification_rejection_reason = ""
+            profile.verified_by = None
+            profile.verified_at = None
+            profile.reviewed_by = None
+            profile.reviewed_at = None
+            profile.save(
+                update_fields=[
+                    "verification_status",
+                    "verification_rejection_reason",
+                    "verified_by",
+                    "verified_at",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+        return profile
+
     def put(self, request, *args, **kwargs):
         profile = self.get_object()
         serializer = self.get_serializer(profile, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        profile = self.save_profile_update(profile, serializer)
+        return Response(self.get_serializer(profile).data)
 
     def patch(self, request, *args, **kwargs):
         profile = self.get_object()
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        profile = self.save_profile_update(profile, serializer)
+        return Response(self.get_serializer(profile).data)
 
 
 class AlumniSearchView(generics.ListAPIView):
