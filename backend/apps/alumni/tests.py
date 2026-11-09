@@ -358,7 +358,7 @@ class AlumniReferralWorkflowTests(APITestCase):
                 recipient=self.alumni_user,
                 referral_request=referral,
             ).count(),
-            1,
+            2,
         )
 
     def test_cannot_mark_pending_request_as_referred(self):
