@@ -2,6 +2,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -15,6 +16,8 @@ from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
 from .serializers import (
     AlumniProfileSerializer,
     AlumniSearchSerializer,
+    AlumniVerificationActionSerializer,
+    GraduationProofUploadSerializer,
     ReferralRequestActionSerializer,
     ReferralRequestCreateSerializer,
     ReferralRequestSerializer,
@@ -337,3 +340,125 @@ class AlumniEngagementMetricsView(APIView):
         counts["is_open_to_referrals"] = profile.is_open_to_referrals
         counts["verification_status"] = profile.verification_status
         return Response(counts)
+
+
+
+class AlumniGraduationProofUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        if request.user.role != User.Role.ALUMNI:
+            raise PermissionDenied("Only alumni can submit graduation proof.")
+
+        profile = get_object_or_404(AlumniProfile, user=request.user)
+        serializer = GraduationProofUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        profile.graduation_proof = serializer.validated_data["graduation_proof"]
+        profile.verification_status = AlumniProfile.VerificationStatus.PENDING
+        profile.verification_rejection_reason = ""
+        profile.verified_by = None
+        profile.verified_at = None
+        profile.reviewed_by = None
+        profile.reviewed_at = None
+        profile.save(
+            update_fields=[
+                "graduation_proof",
+                "verification_status",
+                "verification_rejection_reason",
+                "verified_by",
+                "verified_at",
+                "reviewed_by",
+                "reviewed_at",
+                "updated_at",
+            ]
+        )
+        return Response(AlumniProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+
+class PendingAlumniVerificationView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AlumniProfileSerializer
+
+    def get_queryset(self):
+        if self.request.user.role != User.Role.IPC_ADMIN:
+            raise PermissionDenied("Only IPC administrators can review alumni profiles.")
+        return (
+            AlumniProfile.objects.filter(
+                verification_status=AlumniProfile.VerificationStatus.PENDING,
+                graduation_proof__isnull=False,
+            )
+            .exclude(graduation_proof="")
+            .select_related("user")
+            .order_by("created_at", "id")
+        )
+
+
+class AlumniGraduationProofDownloadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk, *args, **kwargs):
+        if request.user.role != User.Role.IPC_ADMIN:
+            raise PermissionDenied("Only IPC administrators can view graduation evidence.")
+        profile = get_object_or_404(AlumniProfile, pk=pk)
+        if not profile.graduation_proof or not profile.graduation_proof.name:
+            raise ValidationError({"graduation_proof": "No graduation proof is attached."})
+        return FileResponse(
+            profile.graduation_proof.open("rb"),
+            as_attachment=True,
+            filename="alumni-graduation-proof.pdf",
+            content_type="application/pdf",
+        )
+
+
+class AlumniVerificationActionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk, action, *args, **kwargs):
+        if request.user.role != User.Role.IPC_ADMIN:
+            raise PermissionDenied("Only IPC administrators can review alumni profiles.")
+        serializer = AlumniVerificationActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.validated_data.get("reason", "")
+
+        with transaction.atomic():
+            profile = get_object_or_404(
+                AlumniProfile.objects.select_for_update(),
+                pk=pk,
+            )
+            if not profile.graduation_proof or not profile.graduation_proof.name:
+                raise ValidationError({"graduation_proof": "Graduation proof is required."})
+
+            now = timezone.now()
+            if action == "verify":
+                profile.verification_status = AlumniProfile.VerificationStatus.VERIFIED
+                profile.verification_rejection_reason = ""
+                profile.verified_by = request.user
+                profile.verified_at = now
+            elif action == "reject":
+                if len(reason) < 10:
+                    raise ValidationError({
+                        "reason": "Provide at least 10 characters explaining the rejection."
+                    })
+                profile.verification_status = AlumniProfile.VerificationStatus.REJECTED
+                profile.verification_rejection_reason = reason
+                profile.verified_by = None
+                profile.verified_at = None
+            else:
+                raise ValidationError({"action": "Use verify or reject."})
+
+            profile.reviewed_by = request.user
+            profile.reviewed_at = now
+            profile.save(
+                update_fields=[
+                    "verification_status",
+                    "verification_rejection_reason",
+                    "verified_by",
+                    "verified_at",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+
+        return Response(AlumniProfileSerializer(profile).data, status=status.HTTP_200_OK)
