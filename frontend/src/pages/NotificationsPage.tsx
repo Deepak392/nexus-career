@@ -134,6 +134,11 @@ export default function NotificationsPage() {
                 {notification.application_id && (
                   <Link to="/applications">View my application</Link>
                 )}
+                {notification.referral_request_id && (
+                  <Link to={user.role === "ALUMNI" ? "/alumni/referrals" : "/referrals"}>
+                    View referral request
+                  </Link>
+                )}
                 {!notification.read_at && (
                   <button
                     className="student-secondary-button"

@@ -63,6 +63,7 @@ export interface InAppNotification {
   title: string;
   message: string;
   application_id: number | null;
+  referral_request_id: number | null;
   created_at: string;
   read_at: string | null;
 }

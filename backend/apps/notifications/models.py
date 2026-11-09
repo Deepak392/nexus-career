@@ -5,6 +5,9 @@ from django.db import models
 class Notification(models.Model):
     class NotificationType(models.TextChoices):
         APPLICATION_SUBMITTED = "APPLICATION_SUBMITTED", "Application submitted"
+        REFERRAL_REQUEST = "REFERRAL_REQUEST", "New referral request"
+        REFERRAL_STATUS = "REFERRAL_STATUS", "Referral request update"
+        REFERRAL_MORE_INFO = "REFERRAL_MORE_INFO", "More information requested"
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -19,6 +22,13 @@ class Notification(models.Model):
     message = models.CharField(max_length=500)
     application = models.ForeignKey(
         "applications.Application",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    referral_request = models.ForeignKey(
+        "alumni.ReferralRequest",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
