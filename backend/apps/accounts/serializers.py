@@ -17,7 +17,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             (User.Role.ALUMNI, "Alumni"),
             (User.Role.RECRUITER, "Recruiter"),
         ],
-        default=User.Role.STUDENT,
+        required=True,
     )
     password = serializers.CharField(
         write_only=True,
@@ -69,7 +69,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return normalized_email
 
     def validate(self, attrs):
-        role = attrs.get("role", User.Role.STUDENT)
+        role = attrs["role"]
         email = attrs.get("email", "")
         email_domain = email.rpartition("@")[2]
 
@@ -111,7 +111,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        role = validated_data.pop("role", User.Role.STUDENT)
+        role = validated_data.pop("role")
         alumni_data = {
             "department": validated_data.pop("department", ""),
             "degree_programme": validated_data.pop("degree_programme", ""),
