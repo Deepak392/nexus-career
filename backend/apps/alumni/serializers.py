@@ -1,11 +1,8 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.students.validators import validate_pdf_resume
 
 from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
-
-User = get_user_model()
 
 
 class AlumniProfileSerializer(serializers.ModelSerializer):
