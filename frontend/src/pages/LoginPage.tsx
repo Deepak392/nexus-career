@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage, type LoginRole } from "../services/auth";
@@ -15,8 +15,12 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedRole, setSelectedRole] = useState<LoginRole>("STUDENT");
+  const [selectedRole, setSelectedRole] = useState<LoginRole>(() => {
+    const requestedRole = searchParams.get("role");
+    return accountTypes.find((item) => item.role === requestedRole)?.role ?? "STUDENT";
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -73,6 +77,7 @@ export default function LoginPage() {
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
                     setSelectedRole(accountType.role);
+                    setSearchParams({ role: accountType.role }, { replace: true });
                     setError("");
                   }}
                 >
