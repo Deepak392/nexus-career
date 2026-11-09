@@ -5,6 +5,11 @@ from django.db import models
 from django.db.models import Q
 
 
+def graduation_proof_upload_path(instance, filename):
+    \"\"\"Store graduation evidence under an opaque private filename.\"\"\"
+    return f\"private/alumni-graduation-proofs/{uuid.uuid4().hex}.pdf\"
+
+
 class AlumniProfile(models.Model):
 
     class VerificationStatus(models.TextChoices):
@@ -65,11 +70,6 @@ class AlumniProfile(models.Model):
 
     def __str__(self):
         return f"Alumni Profile: {self.user.username}"
-
-
-def graduation_proof_upload_path(instance, filename):
-    \"\"\"Store graduation evidence under an opaque private filename.\"\"\"
-    return f\"private/alumni-graduation-proofs/{uuid.uuid4().hex}.pdf\"
 
 
 def referral_resume_upload_path(instance, filename):
