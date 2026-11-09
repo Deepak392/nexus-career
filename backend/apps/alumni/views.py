@@ -1,4 +1,5 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Q
 from django.db.models import Count
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -328,7 +329,7 @@ class AlumniEngagementMetricsView(APIView):
         requests = ReferralRequest.objects.filter(alumni_profile=profile)
         counts = requests.aggregate(
             total=Count("id"),
-            pending=Count("id", filter=models.Q(status=ReferralRequest.Status.PENDING)),
+            pending=Count("id", filter=Q(status=ReferralRequest.Status.PENDING)),
             accepted=Count("id", filter=models.Q(status=ReferralRequest.Status.ACCEPTED)),
             referred=Count("id", filter=models.Q(status=ReferralRequest.Status.REFERRED)),
             declined=Count("id", filter=models.Q(status=ReferralRequest.Status.DECLINED)),
