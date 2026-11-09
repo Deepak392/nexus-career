@@ -410,7 +410,7 @@ class PasswordResetTests(APITestCase):
             password=self.password,
             role=User.Role.STUDENT,
         )
-        mail.outbox.clear()
+        mail.outbox = []
 
     def request_reset_link(self):
         response = self.client.post(
