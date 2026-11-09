@@ -18,6 +18,9 @@ export interface AlumniProfile {
   industry: string;
   is_open_to_referrals: boolean;
   verification_status: "PENDING" | "VERIFIED" | "REJECTED";
+  verification_rejection_reason: string;
+  verified_at: string | null;
+  has_graduation_proof: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -149,4 +152,39 @@ export async function performReferralAction(
 
 export async function downloadReferralResume(id: number): Promise<Blob> {
   return authenticatedBlobRequest(`/alumni/referral-requests/${id}/resume/`);
+}
+
+
+export async function uploadGraduationProof(file: File): Promise<AlumniProfile> {
+  const data = new FormData();
+  data.set("graduation_proof", file);
+  return authenticatedRequest<AlumniProfile>("/alumni/graduation-proof/", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function getPendingAlumniVerifications(): Promise<{
+  count: number;
+  results: AlumniProfile[];
+}> {
+  return authenticatedRequest("/alumni/ipc/pending-verification/");
+}
+
+export async function downloadAlumniGraduationProof(id: number): Promise<Blob> {
+  return authenticatedBlobRequest(`/alumni/ipc/${id}/proof/`);
+}
+
+export async function verifyAlumniProfile(id: number): Promise<AlumniProfile> {
+  return authenticatedRequest<AlumniProfile>(`/alumni/ipc/${id}/verify/`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function rejectAlumniProfile(id: number, reason: string): Promise<AlumniProfile> {
+  return authenticatedRequest<AlumniProfile>(`/alumni/ipc/${id}/reject/`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
 }
