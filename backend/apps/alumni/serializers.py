@@ -28,6 +28,9 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "industry",
             "is_open_to_referrals",
             "verification_status",
+            "verification_rejection_reason",
+            "verified_at",
+            "has_graduation_proof",
             "created_at",
             "updated_at",
         ]
@@ -37,9 +40,15 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "full_name",
             "email",
             "verification_status",
+            "verification_rejection_reason",
+            "verified_at",
+            "has_graduation_proof",
             "created_at",
             "updated_at",
         ]
+
+    def get_has_graduation_proof(self, obj):
+        return bool(obj.graduation_proof and obj.graduation_proof.name)
 
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
@@ -192,4 +201,23 @@ class ReferralRequestActionSerializer(serializers.Serializer):
     )
 
     def validate_note(self, value):
+        return value.strip()
+
+
+class GraduationProofUploadSerializer(serializers.Serializer):
+    graduation_proof = serializers.FileField(
+        allow_empty_file=False,
+        validators=[validate_pdf_resume],
+    )
+
+
+class AlumniVerificationActionSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        max_length=1000,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+    )
+
+    def validate_reason(self, value):
         return value.strip()
