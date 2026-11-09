@@ -17,10 +17,9 @@ export default function LoginPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedRole, setSelectedRole] = useState<LoginRole>(() => {
-    const requestedRole = searchParams.get("role");
-    return accountTypes.find((item) => item.role === requestedRole)?.role ?? "STUDENT";
-  });
+  const requestedRole = searchParams.get("role");
+  const selectedRole =
+    accountTypes.find((item) => item.role === requestedRole)?.role ?? "STUDENT";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -76,7 +75,6 @@ export default function LoginPage() {
                   type="button"
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
-                    setSelectedRole(accountType.role);
                     setSearchParams({ role: accountType.role }, { replace: true });
                     setError("");
                   }}
