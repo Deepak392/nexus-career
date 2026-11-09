@@ -4,6 +4,9 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
+
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -14,6 +17,7 @@ from apps.notifications.models import Notification
 
 from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
 from .serializers import (
+    AlumniEngagementMetricsSerializer,
     AlumniProfileSerializer,
     AlumniSearchSerializer,
     AlumniVerificationActionSerializer,
@@ -146,11 +150,20 @@ def referral_queryset_for_user(user):
 class ReferralRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_referral_request_list",
+        responses=ReferralRequestSerializer(many=True),
+    )
     def get(self, request, *args, **kwargs):
         queryset = referral_queryset_for_user(request.user)
         results = ReferralRequestSerializer(queryset, many=True).data
         return Response(results)
 
+    @extend_schema(
+        operation_id="alumni_referral_request_create",
+        request=ReferralRequestCreateSerializer,
+        responses={status.HTTP_201_CREATED: ReferralRequestSerializer},
+    )
     def post(self, request, *args, **kwargs):
         if request.user.role != User.Role.STUDENT:
             raise PermissionDenied("Only students can submit referral requests.")
@@ -204,6 +217,10 @@ class ReferralRequestListCreateView(APIView):
 class ReferralRequestDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_referral_request_detail",
+        responses=ReferralRequestSerializer,
+    )
     def get(self, request, pk, *args, **kwargs):
         referral = get_object_or_404(referral_queryset_for_user(request.user), pk=pk)
         return Response(ReferralRequestSerializer(referral).data)
@@ -212,6 +229,11 @@ class ReferralRequestDetailView(APIView):
 class ReferralRequestActionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_referral_request_action",
+        request=ReferralRequestActionSerializer,
+        responses=ReferralRequestSerializer,
+    )
     def post(self, request, pk, action, *args, **kwargs):
         action_serializer = ReferralRequestActionSerializer(data=request.data)
         action_serializer.is_valid(raise_exception=True)
@@ -338,6 +360,10 @@ class ReferralRequestActionView(APIView):
 class ReferralResumeDownloadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_referral_resume_download",
+        responses=OpenApiTypes.BINARY,
+    )
     def get(self, request, pk, *args, **kwargs):
         referral = get_object_or_404(referral_queryset_for_user(request.user), pk=pk)
         if not referral.resume or not referral.resume.name:
@@ -353,6 +379,10 @@ class ReferralResumeDownloadView(APIView):
 class AlumniEngagementMetricsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_engagement_metrics",
+        responses=AlumniEngagementMetricsSerializer,
+    )
     def get(self, request, *args, **kwargs):
         if request.user.role != User.Role.ALUMNI:
             raise PermissionDenied("Only alumni can view alumni engagement metrics.")
@@ -375,6 +405,11 @@ class AlumniEngagementMetricsView(APIView):
 class AlumniGraduationProofUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="alumni_graduation_proof_upload",
+        request=GraduationProofUploadSerializer,
+        responses=AlumniProfileSerializer,
+    )
     def post(self, request, *args, **kwargs):
         if request.user.role != User.Role.ALUMNI:
             raise PermissionDenied("Only alumni can submit graduation proof.")
@@ -426,6 +461,10 @@ class PendingAlumniVerificationView(generics.ListAPIView):
 class AlumniGraduationProofDownloadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="ipc_alumni_graduation_proof_download",
+        responses=OpenApiTypes.BINARY,
+    )
     def get(self, request, pk, *args, **kwargs):
         if request.user.role != User.Role.IPC_ADMIN:
             raise PermissionDenied("Only IPC administrators can view graduation evidence.")
@@ -443,6 +482,11 @@ class AlumniGraduationProofDownloadView(APIView):
 class AlumniVerificationActionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        operation_id="ipc_alumni_verification_action",
+        request=AlumniVerificationActionSerializer,
+        responses=AlumniProfileSerializer,
+    )
     def post(self, request, pk, action, *args, **kwargs):
         if request.user.role != User.Role.IPC_ADMIN:
             raise PermissionDenied("Only IPC administrators can review alumni profiles.")
