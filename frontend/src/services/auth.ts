@@ -36,6 +36,13 @@ export class ApiError extends Error {
   }
 }
 
+export class RegistrationSignInError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RegistrationSignInError";
+  }
+}
+
 const ACCESS_KEY = "nexus_access_token";
 const REFRESH_KEY = "nexus_refresh_token";
 
@@ -196,22 +203,44 @@ export async function register(
     throw new Error("Alumni registration requires graduation details.");
   }
 
+  const registrationPayload = {
+    username,
+    email,
+    password,
+    role,
+    ...(role === "ALUMNI" ? alumniDetails : {}),
+  };
+
   const createdUser = await apiRequest<AuthUser>("/auth/register/", {
     method: "POST",
-    body: JSON.stringify({
-      username,
-      email,
-      password,
-      role,
-      ...(role === "ALUMNI" ? alumniDetails : {}),
-    }),
+    body: JSON.stringify(registrationPayload),
   });
 
   if (createdUser.role !== role) {
     throw new Error("The server created an account with an unexpected role. Please contact support.");
   }
 
-  return login(username, password);
+  try {
+    const authenticatedUser = await login(username, password);
+
+    if (authenticatedUser.role !== role) {
+      await logout();
+      throw new RegistrationSignInError(
+        `Your account was created, but automatic sign-in returned the role "${authenticatedUser.role}" instead of "${role}". Please sign in using the correct account type.`
+      );
+    }
+
+    return authenticatedUser;
+  } catch (error) {
+    if (error instanceof RegistrationSignInError) {
+      throw error;
+    }
+
+    clearAuthTokens();
+    throw new RegistrationSignInError(
+      `Your ${role.toLowerCase()} account was created successfully, but automatic sign-in failed. Please sign in using your new credentials.`
+    );
+  }
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {
