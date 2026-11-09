@@ -16,43 +16,29 @@ const homeLinks: NavigationLink[] = [
   { to: "/opportunities", label: "Opportunities", icon: "◇" },
 ];
 
-const studentLinks: NavigationLink[] = [
-  ...homeLinks,
-  { to: "/applications", label: "Applications", icon: "▤" },
-  { to: "/notifications", label: "Notifications", icon: "◉" },
-  { to: "/profile", label: "My profile", icon: "◌" },
-];
-
-const alumniLinks: NavigationLink[] = [
-  ...homeLinks,
-  { to: "/notifications", label: "Notifications", icon: "◉" },
-];
-
-const recruiterLinks: NavigationLink[] = [
-  { to: "/", label: "Overview", icon: "⌂", end: true },
-  { to: "/recruiter", label: "Recruiter workspace", icon: "▣" },
-  { to: "/opportunities", label: "Browse opportunities", icon: "◇" },
-];
-
-const ipcAdminLinks: NavigationLink[] = [
-  { to: "/", label: "Overview", icon: "⌂", end: true },
-  { to: "/ipc", label: "Approval queues", icon: "✓" },
-  { to: "/opportunities", label: "Published opportunities", icon: "◇" },
-];
-
-const systemAdminLinks: NavigationLink[] = [
-  { to: "/", label: "Overview", icon: "⌂", end: true },
-];
-
 const navigationByRole: Record<string, NavigationLink[]> = {
-  STUDENT: studentLinks,
-  ALUMNI: alumniLinks,
-  RECRUITER: recruiterLinks,
-  IPC_ADMIN: ipcAdminLinks,
-  SYSTEM_ADMIN: systemAdminLinks,
+  STUDENT: [
+    ...homeLinks,
+    { to: "/applications", label: "Applications", icon: "▤" },
+    { to: "/notifications", label: "Notifications", icon: "◉" },
+    { to: "/profile", label: "My profile", icon: "◌" },
+  ],
+  ALUMNI: [
+    ...homeLinks,
+    { to: "/notifications", label: "Notifications", icon: "◉" },
+  ],
+  RECRUITER: [
+    { to: "/", label: "Overview", icon: "⌂", end: true },
+    { to: "/recruiter", label: "Recruiter workspace", icon: "▣" },
+    { to: "/opportunities", label: "Browse opportunities", icon: "◇" },
+  ],
+  IPC_ADMIN: [
+    { to: "/", label: "Overview", icon: "⌂", end: true },
+    { to: "/ipc", label: "Approval queues", icon: "✓" },
+    { to: "/opportunities", label: "Published opportunities", icon: "◇" },
+  ],
+  SYSTEM_ADMIN: [{ to: "/", label: "Overview", icon: "⌂", end: true }],
 };
-
-const guestLinks = homeLinks;
 
 function areaLabel(pathname: string): string {
   if (pathname.startsWith("/register")) return "Create account";
@@ -78,7 +64,7 @@ export default function Layout() {
   }
 
   const initials = user ? user.username.slice(0, 2).toUpperCase() : "GC";
-  const links = isLoading ? [] : user ? navigationByRole[user.role] ?? guestLinks : guestLinks;
+  const links = isLoading ? [] : user ? navigationByRole[user.role] ?? homeLinks : homeLinks;
 
   return (
     <div className={isAuthPage ? "app-shell auth-shell" : "app-shell"}>
