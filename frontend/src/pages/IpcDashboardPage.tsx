@@ -11,13 +11,22 @@ import {
   type CompanyProfile,
   type OpportunityRecord,
 } from "../services/workflow";
+import {
+  downloadAlumniGraduationProof,
+  getPendingAlumniVerifications,
+  rejectAlumniProfile,
+  verifyAlumniProfile,
+  type AlumniProfile,
+} from "../services/alumni";
 import "./WorkflowPages.css";
 
 export default function IpcDashboardPage() {
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityRecord[]>([]);
+  const [alumniProfiles, setAlumniProfiles] = useState<AlumniProfile[]>([]);
   const [companyReasons, setCompanyReasons] = useState<Record<number, string>>({});
   const [opportunityReasons, setOpportunityReasons] = useState<Record<number, string>>({});
+  const [alumniReasons, setAlumniReasons] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
@@ -25,12 +34,14 @@ export default function IpcDashboardPage() {
 
   const loadQueues = useCallback(async () => {
     try {
-      const [pendingCompanies, pendingOpportunities] = await Promise.all([
+      const [pendingCompanies, pendingOpportunities, pendingAlumni] = await Promise.all([
         getPendingCompanies(),
         getPendingOpportunities(),
+        getPendingAlumniVerifications(),
       ]);
       setCompanies(pendingCompanies);
       setOpportunities(pendingOpportunities);
+      setAlumniProfiles(pendingAlumni.results);
       setError("");
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -68,6 +79,26 @@ export default function IpcDashboardPage() {
       await action();
       setNotice(message);
       await loadQueues();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setBusyKey("");
+    }
+  }
+
+  async function downloadProof(profile: AlumniProfile) {
+    setBusyKey(`alumni-proof-${profile.id}`);
+    setError("");
+    try {
+      const blob = await downloadAlumniGraduationProof(profile.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `alumni-graduation-proof-${profile.id}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -132,6 +163,57 @@ export default function IpcDashboardPage() {
                     className="workflow-button danger"
                     disabled={busyKey !== "" || (companyReasons[company.id] ?? "").trim().length < 5}
                     onClick={() => void performAction(`company-reject-${company.id}`, () => rejectCompany(company.id, companyReasons[company.id].trim()), `${company.name} rejected.`)}
+                  >Reject</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="workflow-panel">
+        <div className="workflow-panel-heading">
+          <div><h2>Alumni verification</h2><p>Review graduation evidence before alumni become visible in the student referral directory.</p></div>
+          <span className="workflow-status pending">{alumniProfiles.length} PENDING</span>
+        </div>
+        {alumniProfiles.length === 0 ? (
+          <div className="workflow-empty">No alumni profiles are awaiting verification.</div>
+        ) : (
+          <div className="workflow-list">
+            {alumniProfiles.map((profile) => (
+              <article className="workflow-list-card" key={profile.id}>
+                <div className="workflow-list-main">
+                  <div className="workflow-list-title">
+                    <h3>{profile.full_name}</h3>
+                    <span className="workflow-status pending">PENDING</span>
+                  </div>
+                  <p>{profile.email} · {profile.department} · {profile.degree_programme} · Class of {profile.graduation_year}</p>
+                  <p>{[profile.designation, profile.current_company, profile.industry].filter(Boolean).join(" · ") || "Professional details not provided"}</p>
+                  <p>Registered {new Date(profile.created_at).toLocaleDateString()}</p>
+                  <label className="workflow-inline-field">
+                    Rejection reason
+                    <input
+                      value={alumniReasons[profile.id] ?? ""}
+                      onChange={(event) => setAlumniReasons({ ...alumniReasons, [profile.id]: event.target.value })}
+                      placeholder="Explain why the proof is insufficient"
+                    />
+                  </label>
+                </div>
+                <div className="workflow-actions">
+                  <button
+                    className="workflow-button secondary"
+                    disabled={busyKey !== ""}
+                    onClick={() => void downloadProof(profile)}
+                  >{busyKey === `alumni-proof-${profile.id}` ? "Downloading..." : "View graduation proof"}</button>
+                  <button
+                    className="workflow-button"
+                    disabled={busyKey !== ""}
+                    onClick={() => void performAction(`alumni-verify-${profile.id}`, () => verifyAlumniProfile(profile.id), `${profile.full_name} verified.`)}
+                  >{busyKey === `alumni-verify-${profile.id}` ? "Verifying..." : "Verify alumni"}</button>
+                  <button
+                    className="workflow-button danger"
+                    disabled={busyKey !== "" || (alumniReasons[profile.id] ?? "").trim().length < 10}
+                    onClick={() => void performAction(`alumni-reject-${profile.id}`, () => rejectAlumniProfile(profile.id, alumniReasons[profile.id].trim()), `${profile.full_name} rejected.`)}
                   >Reject</button>
                 </div>
               </article>
