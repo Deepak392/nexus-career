@@ -5,6 +5,7 @@ import { getApiErrorMessage } from "../services/auth";
 import {
   getAlumniProfile,
   updateAlumniProfile,
+  uploadGraduationProof,
   type AlumniProfile,
 } from "../services/alumni";
 import "./AlumniPages.css";
@@ -38,6 +39,8 @@ export default function AlumniProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -80,6 +83,27 @@ export default function AlumniProfilePage() {
     }
   }
 
+  async function handleProofUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!proofFile) {
+      setError("Choose a PDF graduation proof before submitting.");
+      return;
+    }
+    setUploadingProof(true);
+    setError("");
+    setNotice("");
+    try {
+      const updated = await uploadGraduationProof(proofFile);
+      setProfile(updated);
+      setProofFile(null);
+      setNotice("Graduation proof submitted. Your profile is awaiting IPC verification.");
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setUploadingProof(false);
+    }
+  }
+
   if (loading) return <main className="alumni-page"><div className="alumni-state">Loading profile…</div></main>;
   if (!form || !profile) {
     return (
@@ -107,6 +131,36 @@ export default function AlumniProfilePage() {
 
       {error && <div className="alumni-alert error" role="alert">{error}</div>}
       {notice && <div className="alumni-alert success" role="status">{notice}</div>}
+
+      <section className="alumni-panel alumni-form">
+        <div className="alumni-panel-heading">
+          <div>
+            <h2>Graduation verification</h2>
+            <p>Submit a PDF document so the IPC can verify your alumni status. The document is stored privately and is not visible in the student directory.</p>
+          </div>
+        </div>
+        {profile.has_graduation_proof && (
+          <p className="alumni-muted">A graduation proof document is on file.</p>
+        )}
+        {profile.verification_rejection_reason && (
+          <div className="alumni-alert error" role="alert">
+            IPC review note: {profile.verification_rejection_reason}
+          </div>
+        )}
+        <form className="alumni-inline-form" onSubmit={handleProofUpload}>
+          <label>Graduation proof (PDF, max 5 MB)
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              required
+              onChange={(event) => setProofFile(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          <button className="alumni-primary-button" type="submit" disabled={uploadingProof}>
+            {uploadingProof ? "Uploading…" : "Submit for verification"}
+          </button>
+        </form>
+      </section>
 
       <form className="alumni-panel alumni-form" onSubmit={handleSubmit}>
         <div className="alumni-panel-heading"><div><h2>Academic information</h2><p>Information associated with your Alumni registration.</p></div></div>
