@@ -39,6 +39,15 @@ class AlumniProfile(models.Model):
         choices=VerificationStatus.choices,
         default=VerificationStatus.PENDING,
     )
+    verification_rejection_reason = models.CharField(max_length=500, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="alumni_profiles_reviewed",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
