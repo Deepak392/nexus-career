@@ -121,6 +121,20 @@ export default function RegisterPage() {
 
   return (
     <section className="auth-page">
+      <aside className="auth-visual">
+        <div className="auth-visual-brand"><span className="auth-visual-logo">N</span><span>Nexus Career</span></div>
+        <div className="auth-visual-copy">
+          <p className="auth-visual-eyebrow">JOIN THE CAMPUS NETWORK</p>
+          <h2>Build meaningful connections beyond graduation.</h2>
+          <p>Create an account that reflects your role in the campus career community. Your registration fields and access are tailored to your account type.</p>
+          <ul className="auth-visual-list">
+            <li><span>01</span> Student opportunity discovery</li>
+            <li><span>02</span> Alumni engagement</li>
+            <li><span>03</span> Recruiter and company workflows</li>
+          </ul>
+        </div>
+        <p className="auth-visual-foot">NEXUS CAREER · UNIVERSITY CAREER PLATFORM</p>
+      </aside>
       <div className="auth-card">
         <div className="auth-brand">
           <span className="auth-logo">NC</span>
