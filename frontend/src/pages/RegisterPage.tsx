@@ -50,6 +50,14 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const selectedAccountType = accountTypes.find((item) => item.role === selectedRole);
+
+  const registrationSubtitle = selectedRole === "STUDENT"
+    ? "Register with your university email to access student opportunities."
+    : selectedRole === "ALUMNI"
+      ? "Create your alumni account with your academic details."
+      : "Create a recruiter account to manage your organization’s opportunities.";
+
   const emailLabel = selectedRole === "STUDENT"
     ? "University email"
     : selectedRole === "ALUMNI"
@@ -112,10 +120,8 @@ export default function RegisterPage() {
           <span>Nexus Career</span>
         </div>
 
-        <h1>Create your account</h1>
-        <p className="auth-subtitle">
-          Select the account type that matches how you will use Nexus Career.
-        </p>
+        <h1>Create your {selectedAccountType?.label ?? "Student"} account</h1>
+        <p className="auth-subtitle">{registrationSubtitle}</p>
 
         {success ? (
           <>
@@ -285,8 +291,8 @@ export default function RegisterPage() {
         )}
 
         <p className="auth-footer">
-          Already registered?{" "}
-          <Link to="/login">Sign in</Link>
+          Already have a {selectedAccountType?.label ?? "Student"} account?{" "}
+          <Link to={`/login?role=${selectedRole}`}>Sign in as {selectedAccountType?.label ?? "Student"}</Link>
         </p>
       </div>
     </section>
