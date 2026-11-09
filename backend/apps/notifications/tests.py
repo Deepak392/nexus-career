@@ -59,3 +59,35 @@ class NotificationAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.other_notification.refresh_from_db()
         self.assertIsNone(self.other_notification.read_at)
+
+    def test_alumni_only_sees_own_referral_notifications(self):
+        alumni = User.objects.create_user(
+            username="notification-alumni",
+            email="notification-alumni@example.com",
+            password="StrongPass123!",
+            role=User.Role.ALUMNI,
+        )
+        other_alumni = User.objects.create_user(
+            username="notification-alumni-other",
+            email="notification-alumni-other@example.com",
+            password="StrongPass123!",
+            role=User.Role.ALUMNI,
+        )
+        own = Notification.objects.create(
+            recipient=alumni,
+            notification_type="REFERRAL_REQUEST",
+            title="New referral request",
+            message="A student requested a referral.",
+        )
+        Notification.objects.create(
+            recipient=other_alumni,
+            notification_type="REFERRAL_REQUEST",
+            title="New referral request",
+            message="Another student requested a referral.",
+        )
+        self.client.force_authenticate(user=alumni)
+        response = self.client.get(reverse("notification-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], own.pk)
+        self.assertIsNone(response.data["results"][0]["referral_request_id"])
