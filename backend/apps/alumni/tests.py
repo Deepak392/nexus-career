@@ -371,3 +371,135 @@ class AlumniReferralWorkflowTests(APITestCase):
         self.assertEqual(response.data["pending"], 1)
         self.assertEqual(response.data["student_interactions"], 1)
         self.assertTrue(response.data["is_open_to_referrals"])
+
+
+
+@override_settings(MEDIA_ROOT="/tmp/nexus-career-alumni-verification-tests")
+class AlumniGraduationVerificationTests(APITestCase):
+    def setUp(self):
+        self.alumni = User.objects.create_user(
+            username="proofalumni",
+            email="proofalumni@example.com",
+            password="TestPassword123!",
+            role=User.Role.ALUMNI,
+        )
+        self.student = User.objects.create_user(
+            username="proofstudent",
+            email="proofstudent@example.com",
+            password="TestPassword123!",
+            role=User.Role.STUDENT,
+        )
+        self.ipc = User.objects.create_user(
+            username="proofipc",
+            email="proofipc@example.com",
+            password="TestPassword123!",
+            role=User.Role.IPC_ADMIN,
+        )
+        self.profile = AlumniProfile.objects.create(
+            user=self.alumni,
+            department="Computer Science",
+            degree_programme="B.Tech",
+            graduation_year=2023,
+        )
+
+    def proof_upload(self):
+        return SimpleUploadedFile(
+            "graduation-proof.pdf",
+            b"%PDF-1.4\nNexus Career graduation evidence",
+            content_type="application/pdf",
+        )
+
+    def upload_proof(self):
+        self.client.force_authenticate(user=self.alumni)
+        return self.client.post(
+            reverse("alumni-graduation-proof-upload"),
+            {"graduation_proof": self.proof_upload()},
+            format="multipart",
+        )
+
+    def test_alumni_can_submit_private_graduation_proof(self):
+        response = self.upload_proof()
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.profile.refresh_from_db()
+        self.assertTrue(self.profile.graduation_proof.name.startswith(
+            "private/alumni-graduation-proofs/"
+        ))
+        self.assertTrue(response.data["has_graduation_proof"])
+        self.assertEqual(
+            self.profile.verification_status,
+            AlumniProfile.VerificationStatus.PENDING,
+        )
+
+    def test_non_alumni_cannot_upload_graduation_proof(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(
+            reverse("alumni-graduation-proof-upload"),
+            {"graduation_proof": self.proof_upload()},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_ipc_queue_contains_only_pending_profiles_with_proof(self):
+        self.upload_proof()
+        self.client.force_authenticate(user=self.ipc)
+        response = self.client.get(reverse("ipc-pending-alumni-verification"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], self.profile.pk)
+
+    def test_only_ipc_can_access_graduation_proof_and_verify_profile(self):
+        self.upload_proof()
+        proof_url = reverse("ipc-alumni-graduation-proof", args=[self.profile.pk])
+        verify_url = reverse(
+            "ipc-alumni-verification-action",
+            args=[self.profile.pk, "verify"],
+        )
+
+        self.client.force_authenticate(user=self.student)
+        self.assertEqual(
+            self.client.get(proof_url).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        self.assertEqual(
+            self.client.post(verify_url, {}, format="json").status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+        self.client.force_authenticate(user=self.ipc)
+        proof_response = self.client.get(proof_url)
+        self.assertEqual(proof_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(proof_response["Content-Type"], "application/pdf")
+
+        verify_response = self.client.post(verify_url, {}, format="json")
+        self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.verification_status,
+            AlumniProfile.VerificationStatus.VERIFIED,
+        )
+        self.assertEqual(self.profile.verified_by, self.ipc)
+        self.assertIsNotNone(self.profile.verified_at)
+
+    def test_ipc_rejection_requires_reason_and_records_review(self):
+        self.upload_proof()
+        self.client.force_authenticate(user=self.ipc)
+        url = reverse(
+            "ipc-alumni-verification-action",
+            args=[self.profile.pk, "reject"],
+        )
+        invalid = self.client.post(url, {"reason": "No"}, format="json")
+        self.assertEqual(invalid.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.post(
+            url,
+            {"reason": "The uploaded document does not establish graduation."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.verification_status,
+            AlumniProfile.VerificationStatus.REJECTED,
+        )
+        self.assertEqual(self.profile.reviewed_by, self.ipc)
+        self.assertTrue(self.profile.verification_rejection_reason)
