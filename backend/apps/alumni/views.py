@@ -147,9 +147,21 @@ class AlumniVerificationView(APIView):
         rejection_reason = serializer.validated_data.get("rejection_reason", "")
 
         with transaction.atomic():
+            now = timezone.now()
             alumni.verification_status = new_status
-            alumni.updated_at = timezone.now()
-            alumni.save(update_fields=["verification_status", "updated_at"])
+            alumni.verified_by = request.user
+            alumni.verified_at = now
+            alumni.verification_rejection_reason = rejection_reason
+            alumni.updated_at = now
+            alumni.save(
+                update_fields=[
+                    "verification_status",
+                    "verified_by",
+                    "verified_at",
+                    "verification_rejection_reason",
+                    "updated_at",
+                ]
+            )
 
             log_verification_audit(
                 actor=request.user,
@@ -176,6 +188,8 @@ class AlumniVerificationView(APIView):
             "graduation_year": alumni.graduation_year,
             "graduation_proof": alumni.graduation_proof.url if alumni.graduation_proof else None,
             "rejection_reason": rejection_reason,
+            "verified_by": alumni.verified_by_id,
+            "verified_at": alumni.verified_at,
             "updated_at": alumni.updated_at,
         }
 

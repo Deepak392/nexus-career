@@ -57,3 +57,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_verified",
         ]
         read_only_fields = fields
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(write_only=True, trim_whitespace=True)

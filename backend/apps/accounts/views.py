@@ -1,4 +1,4 @@
-
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -7,12 +7,20 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer, UserProfileSerializer
+from .serializers import (
+    LogoutSerializer,
+    RegisterSerializer,
+    UserProfileSerializer,
+)
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=RegisterSerializer,
+        responses={201: UserProfileSerializer},
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -28,6 +36,7 @@ class RegisterView(APIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=UserProfileSerializer)
     def get(self, request):
         serializer = UserProfileSerializer(request.user)
 
@@ -40,6 +49,12 @@ class MeView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=LogoutSerializer,
+        responses={
+            205: OpenApiResponse(description="Logout successful."),
+        },
+    )
     def post(self, request):
         raw_refresh_token = request.data.get("refresh")
 

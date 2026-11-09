@@ -97,4 +97,6 @@ class AlumniVerificationResponseSerializer(serializers.Serializer):
     graduation_year = serializers.IntegerField(help_text="Graduation year.")
     graduation_proof = serializers.CharField(allow_null=True, required=False, help_text="Evidence document URL or path.")
     rejection_reason = serializers.CharField(required=False, allow_blank=True)
+    verified_by = serializers.IntegerField(allow_null=True, required=False)
+    verified_at = serializers.DateTimeField(allow_null=True, required=False)
     updated_at = serializers.DateTimeField(help_text="Timestamp of update.")

@@ -144,6 +144,8 @@ class TestAlumniVerificationWorkflow:
         # Assert database persistence
         pending_alumni_profile.refresh_from_db()
         assert pending_alumni_profile.verification_status == AlumniProfile.VerificationStatus.VERIFIED
+        assert pending_alumni_profile.verified_by_id == ipc_admin_user.id
+        assert pending_alumni_profile.verified_at is not None
 
         # Assert audit dispatch
         logs = get_audit_logs()
@@ -173,6 +175,9 @@ class TestAlumniVerificationWorkflow:
 
         pending_alumni_profile.refresh_from_db()
         assert pending_alumni_profile.verification_status == AlumniProfile.VerificationStatus.REJECTED
+        assert pending_alumni_profile.verified_by_id == ipc_admin_user.id
+        assert pending_alumni_profile.verified_at is not None
+        assert pending_alumni_profile.verification_rejection_reason == reason
 
         logs = get_audit_logs()
         assert len(logs) == 1
