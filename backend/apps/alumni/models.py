@@ -6,8 +6,8 @@ from django.db.models import Q
 
 
 def graduation_proof_upload_path(instance, filename):
-    \"\"\"Store graduation evidence under an opaque private filename.\"\"\"
-    return f\"private/alumni-graduation-proofs/{uuid.uuid4().hex}.pdf\"
+    """Store graduation evidence under an opaque private filename."""
+    return f"private/alumni-graduation-proofs/{uuid.uuid4().hex}.pdf"
 
 
 class AlumniProfile(models.Model):
@@ -50,7 +50,7 @@ class AlumniProfile(models.Model):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name=\"verified_alumni_profiles\",
+        related_name="verified_alumni_profiles",
     )
     verified_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(
@@ -58,7 +58,7 @@ class AlumniProfile(models.Model):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name=\"reviewed_alumni_profiles\",
+        related_name="reviewed_alumni_profiles",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
