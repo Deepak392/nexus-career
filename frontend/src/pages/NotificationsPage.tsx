@@ -112,7 +112,7 @@ export default function NotificationsPage() {
       ) : notifications.length === 0 ? (
         <section className="student-panel student-empty">
           <h2>No notifications yet</h2>
-          <p>Updates about your applications will appear here.</p>
+          <p>Updates about your applications and referral activity will appear here.</p>
           <Link className="student-primary-button" to="/opportunities">Browse opportunities</Link>
         </section>
       ) : (
