@@ -331,12 +331,15 @@ class AlumniReferralWorkflowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], ReferralRequest.Status.PENDING)
         self.assertEqual(len(response.data["history"]), 3)
-        self.assertEqual(
-            Notification.objects.filter(
-                recipient=self.alumni_user,
-                referral_request=referral,
-            ).count(),
-            1,
+        alumni_notifications = Notification.objects.filter(
+            recipient=self.alumni_user,
+            referral_request=referral,
+        )
+        self.assertEqual(alumni_notifications.count(), 2)
+        self.assertTrue(
+            alumni_notifications.filter(
+                title="Student responded to a referral request"
+            ).exists()
         )
 
     def test_cannot_mark_pending_request_as_referred(self):
