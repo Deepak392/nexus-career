@@ -178,6 +178,45 @@ export async function authenticatedRequest<T>(
   return apiRequest<T>(path, options, token);
 }
 
+export async function authenticatedBlobRequest(
+  path: string,
+  options: RequestInit = {}
+): Promise<Blob> {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Please sign in to continue.");
+  }
+
+  const headers = new Headers(options.headers);
+  headers.set("Accept", "application/pdf");
+  headers.set("Authorization", `Bearer ${token}`);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  } catch {
+    throw new Error("Cannot connect to the backend. Check that Django is running on port 8000.");
+  }
+
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const refreshedHeaders = new Headers(options.headers);
+      refreshedHeaders.set("Accept", "application/pdf");
+      refreshedHeaders.set("Authorization", `Bearer ${getAccessToken()}`);
+      response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers: refreshedHeaders });
+    } else {
+      clearAuthTokens();
+    }
+  }
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new ApiError(payload, response.status);
+  }
+  return response.blob();
+}
+
 export async function login(username: string, password: string): Promise<AuthUser> {
   const tokens = await apiRequest<TokenPair>("/auth/login/", {
     method: "POST",
