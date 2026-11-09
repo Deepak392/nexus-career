@@ -27,11 +27,13 @@ class AuthenticationTests(APITestCase):
                 "username": "newstudent",
                 "email": "newstudent@scds.saiuniversity.edu.in",
                 "password": "AnotherSecurePassword123!X",
+                "role": "STUDENT",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["role"], User.Role.STUDENT)
 
         new_user = User.objects.get(username="newstudent")
 
@@ -43,7 +45,7 @@ class AuthenticationTests(APITestCase):
             "/api/v1/auth/register/",
             {
                 "username": "newrecruiter",
-                "email": "recruiter@example.com",
+                "email": "recruiter@gmail.com",
                 "password": "AnotherSecurePassword123!X",
                 "role": "RECRUITER",
             },
@@ -53,6 +55,7 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         recruiter = User.objects.get(username="newrecruiter")
         self.assertEqual(recruiter.role, User.Role.RECRUITER)
+        self.assertEqual(recruiter.email, "recruiter@gmail.com")
         self.assertEqual(response.data["role"], User.Role.RECRUITER)
 
         login_response = self.client.post(
@@ -132,6 +135,21 @@ class AuthenticationTests(APITestCase):
         self.assertIn("degree_programme", response.data)
         self.assertIn("graduation_year", response.data)
         self.assertFalse(User.objects.filter(username="missingdetails").exists())
+
+    def test_registration_requires_an_explicit_role(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "missingrole",
+                "email": "missingrole@scds.saiuniversity.edu.in",
+                "password": "AnotherSecurePassword123!X",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("role", response.data)
+        self.assertFalse(User.objects.filter(username="missingrole").exists())
 
     def test_registration_rejects_privileged_role_assignment(self):
         response = self.client.post(
