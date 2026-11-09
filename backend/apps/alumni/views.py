@@ -187,10 +187,7 @@ class ReferralRequestActionView(APIView):
 
         with transaction.atomic():
             referral = get_object_or_404(
-                ReferralRequest.objects.select_for_update().select_related(
-                    "student",
-                    "alumni_profile__user",
-                ),
+                referral_queryset_for_user(request.user).select_for_update(),
                 pk=pk,
             )
             actor = request.user
