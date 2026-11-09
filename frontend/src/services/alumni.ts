@@ -109,7 +109,8 @@ export async function searchAlumni(
   if (filters.designation?.trim()) params.set("designation", filters.designation.trim());
   if (filters.department?.trim()) params.set("department", filters.department.trim());
   if (filters.available !== undefined) params.set("available", String(filters.available));
-  const suffix = params.size ? `?${params.toString()}` : "";
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
   return authenticatedRequest<{ count: number; results: AlumniSearchResult[] }>(
     `/alumni/search/${suffix}`
   );
