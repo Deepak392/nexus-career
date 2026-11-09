@@ -35,7 +35,9 @@ export default function StudentReferralRequestsPage() {
     }
   }, []);
 
-  useEffect(() => { void loadRequests(); }, [loadRequests]);
+  useEffect(() => {
+    queueMicrotask(() => { void loadRequests(); });
+  }, [loadRequests]);
 
   async function respond(item: ReferralRequest) {
     const note = (responses[item.id] ?? "").trim();
