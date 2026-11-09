@@ -49,7 +49,13 @@ export default function AlumniNetworkPage() {
     }
   }, [appliedFilters]);
 
-  useEffect(() => { void loadAlumni(); }, [loadAlumni]);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadAlumni();
+    });
+    return () => { active = false; };
+  }, [loadAlumni]);
 
   function handleFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
