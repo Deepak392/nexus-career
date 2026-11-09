@@ -187,7 +187,7 @@ class ReferralRequestActionView(APIView):
 
         with transaction.atomic():
             referral = get_object_or_404(
-                referral_queryset_for_user(request.user).select_for_update(),
+                referral_queryset_for_user(request.user).select_for_update(of=("self",)),
                 pk=pk,
             )
             actor = request.user
