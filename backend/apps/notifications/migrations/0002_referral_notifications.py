@@ -18,6 +18,7 @@ class Migration(migrations.Migration):
                     ("REFERRAL_REQUEST", "New referral request"),
                     ("REFERRAL_STATUS", "Referral request update"),
                     ("REFERRAL_MORE_INFO", "More information requested"),
+                    ("ALUMNI_VERIFICATION", "Alumni verification update"),
                 ],
                 max_length=40,
             ),
