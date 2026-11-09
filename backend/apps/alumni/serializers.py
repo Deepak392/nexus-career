@@ -28,6 +28,8 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "industry",
             "is_open_to_referrals",
             "verification_status",
+            "verification_rejection_reason",
+            "reviewed_at",
             "created_at",
             "updated_at",
         ]
@@ -37,6 +39,8 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "full_name",
             "email",
             "verification_status",
+            "verification_rejection_reason",
+            "reviewed_at",
             "created_at",
             "updated_at",
         ]
@@ -50,6 +54,32 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
                 "Graduation year must be greater than zero."
             )
         return value
+
+
+class AlumniReviewSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source="user.email", read_only=True)
+
+    class Meta:
+        model = AlumniProfile
+        fields = [
+            "id",
+            "username",
+            "full_name",
+            "email",
+            "department",
+            "degree_programme",
+            "graduation_year",
+            "current_company",
+            "designation",
+            "industry",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
 
 
 class AlumniSearchSerializer(serializers.ModelSerializer):
