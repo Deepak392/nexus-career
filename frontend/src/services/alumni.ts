@@ -18,6 +18,8 @@ export interface AlumniProfile {
   industry: string;
   is_open_to_referrals: boolean;
   verification_status: "PENDING" | "VERIFIED" | "REJECTED";
+  verification_rejection_reason: string;
+  reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 }
