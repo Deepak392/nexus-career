@@ -126,8 +126,10 @@ export default function LoginPage() {
         </form>
 
         <p className="auth-footer">
-          Don't have an account?{" "}
-          <Link to={`/register?role=${selectedRole}`}>Create a {selectedAccountType?.label ?? "Student"} account</Link>
+          New to Nexus Career as a {selectedAccountType?.label ?? "Student"}?{" "}
+          <Link to={`/register?role=${selectedRole}`}>
+            Create a {selectedAccountType?.label ?? "Student"} account
+          </Link>
         </p>
       </div>
     </section>
