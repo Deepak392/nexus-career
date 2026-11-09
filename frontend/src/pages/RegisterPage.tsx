@@ -62,13 +62,13 @@ export default function RegisterPage() {
     ? "University email"
     : selectedRole === "ALUMNI"
       ? "Personal or alumni email"
-      : "Work email";
+      : "Email address";
 
   const emailPlaceholder = selectedRole === "STUDENT"
     ? "yourname@university.edu"
     : selectedRole === "ALUMNI"
       ? "you@example.com"
-      : "you@company.com";
+      : "you@example.com";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,6 +178,7 @@ export default function RegisterPage() {
 
           {selectedRole === "RECRUITER" && (
             <div className="auth-info">
+              Use any valid email address; a university email is not required.
               After registering, create your company profile. The IPC must
               verify the company before you can submit opportunities.
             </div>
