@@ -60,6 +60,28 @@ class AlumniProfileAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data["is_open_to_referrals"])
 
+    def test_academic_profile_changes_reset_alumni_verification(self):
+        profile = AlumniProfile.objects.create(
+            user=self.alumni,
+            verification_status=AlumniProfile.VerificationStatus.VERIFIED,
+            **self.valid_data,
+        )
+        response = self.client.patch(
+            self.url,
+            {"graduation_year": 2025},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertEqual(
+            profile.verification_status,
+            AlumniProfile.VerificationStatus.PENDING,
+        )
+        self.assertIsNone(profile.verified_by)
+        self.assertIsNone(profile.verified_at)
+        self.assertIsNone(profile.reviewed_by)
+        self.assertIsNone(profile.reviewed_at)
+
     def test_alumni_cannot_create_duplicate_profile(self):
         AlumniProfile.objects.create(user=self.alumni, **self.valid_data)
         response = self.client.post(self.url, self.valid_data, format="json")
