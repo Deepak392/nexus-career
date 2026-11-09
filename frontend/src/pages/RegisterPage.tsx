@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   getApiErrorMessage,
+  RegistrationSignInError,
   type LoginRole,
 } from "../services/auth";
 import "./AuthPages.css";
@@ -47,6 +48,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [requiresManualSignIn, setRequiresManualSignIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const selectedAccountType = accountTypes.find((item) => item.role === selectedRole);
@@ -105,7 +107,12 @@ export default function RegisterPage() {
         navigate(destination, { replace: true });
       }
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      if (err instanceof RegistrationSignInError) {
+        setRequiresManualSignIn(true);
+        setSuccess(err.message);
+      } else {
+        setError(getApiErrorMessage(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -128,9 +135,16 @@ export default function RegisterPage() {
             <button
               className="auth-submit"
               type="button"
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() =>
+                navigate(
+                  requiresManualSignIn ? `/login?role=${selectedRole}` : "/",
+                  { replace: true }
+                )
+              }
             >
-              Continue to Nexus Career
+              {requiresManualSignIn
+                ? `Sign in as ${selectedAccountType?.label ?? "Student"}`
+                : "Continue to Nexus Career"}
             </button>
           </>
         ) : (
