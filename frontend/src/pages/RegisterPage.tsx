@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   getApiErrorMessage,
+  RegistrationSignInError,
   type LoginRole,
 } from "../services/auth";
 import "./AuthPages.css";
@@ -34,10 +35,9 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedRole, setSelectedRole] = useState<LoginRole>(() => {
-    const requestedRole = searchParams.get("role");
-    return accountTypes.find((accountType) => accountType.role === requestedRole)?.role ?? "STUDENT";
-  });
+  const requestedRole = searchParams.get("role");
+  const selectedRole =
+    accountTypes.find((accountType) => accountType.role === requestedRole)?.role ?? "STUDENT";
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,6 +48,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [requiresManualSignIn, setRequiresManualSignIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const selectedAccountType = accountTypes.find((item) => item.role === selectedRole);
@@ -106,7 +107,12 @@ export default function RegisterPage() {
         navigate(destination, { replace: true });
       }
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      if (err instanceof RegistrationSignInError) {
+        setRequiresManualSignIn(true);
+        setSuccess(err.message);
+      } else {
+        setError(getApiErrorMessage(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -129,9 +135,16 @@ export default function RegisterPage() {
             <button
               className="auth-submit"
               type="button"
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() =>
+                navigate(
+                  requiresManualSignIn ? `/login?role=${selectedRole}` : "/",
+                  { replace: true }
+                )
+              }
             >
-              Continue to Nexus Career
+              {requiresManualSignIn
+                ? `Sign in as ${selectedAccountType?.label ?? "Student"}`
+                : "Continue to Nexus Career"}
             </button>
           </>
         ) : (
@@ -150,7 +163,6 @@ export default function RegisterPage() {
                   type="button"
                   aria-pressed={selectedRole === accountType.role}
                   onClick={() => {
-                    setSelectedRole(accountType.role);
                     setSearchParams({ role: accountType.role }, { replace: true });
                     setError("");
                   }}
