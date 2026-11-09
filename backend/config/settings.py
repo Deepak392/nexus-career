@@ -114,6 +114,31 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 
+# The reset link is short-lived and is invalidated after the password changes.
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT", "1800"))
+FRONTEND_BASE_URL = os.getenv(
+    "FRONTEND_BASE_URL",
+    "http://localhost:5173",
+).rstrip("/")
+
+# Local development uses the console backend so no SMTP account is required.
+# Production deployments should configure SMTP through environment variables.
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "Nexus Career <no-reply@nexus-career.local>",
+)
+
 # Keep resume files outside static/public URL routing.
 MEDIA_ROOT = Path(os.environ.get("PRIVATE_MEDIA_ROOT", BASE_DIR / "private_media"))
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
@@ -127,6 +152,10 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    "DEFAULT_THROTTLE_RATES": {
+        "password_reset": "5/hour",
+        "password_reset_confirm": "10/hour",
+    },
 }
 
 SIMPLE_JWT = {

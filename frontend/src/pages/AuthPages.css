@@ -148,3 +148,26 @@
   .auth-role-description { text-align: right; }
   .auth-visual-list { grid-template-columns: 1fr; }
 }
+
+
+.auth-form-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1px 0 2px;
+}
+.auth-form-link {
+  color: #2d4b84;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.auth-form-link:hover { text-decoration: underline; }
+.auth-recovery-card { max-width: 540px; }
+.auth-reset-hint {
+  margin: 2px 0 0;
+  color: #778297;
+  font-size: 11px;
+  line-height: 1.5;
+}
+:root[data-theme="dark"] .auth-form-link { color: var(--accent); }
+:root[data-theme="dark"] .auth-reset-hint { color: var(--text-muted); }

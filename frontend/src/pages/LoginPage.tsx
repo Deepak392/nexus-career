@@ -129,6 +129,12 @@ export default function LoginPage() {
             required
           />
 
+          <div className="auth-form-link-row">
+            <Link className="auth-form-link" to="/forgot-password">
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             className="auth-submit"
             type="submit"

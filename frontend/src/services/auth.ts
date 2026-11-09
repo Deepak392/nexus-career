@@ -317,3 +317,26 @@ export async function logout(): Promise<void> {
     clearAuthTokens();
   }
 }
+
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiRequest<{ detail: string }>("/auth/password-reset/", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function confirmPasswordReset(
+  uid: string,
+  token: string,
+  newPassword: string
+): Promise<void> {
+  await apiRequest<{ detail: string }>("/auth/password-reset/confirm/", {
+    method: "POST",
+    body: JSON.stringify({
+      uid,
+      token,
+      new_password: newPassword,
+    }),
+  });
+}

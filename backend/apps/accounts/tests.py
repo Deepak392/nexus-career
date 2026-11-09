@@ -1,4 +1,8 @@
+from urllib.parse import parse_qs, urlparse
+
 from django.contrib.auth import get_user_model
+from django.core import mail
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -389,3 +393,155 @@ class AuthenticationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_BASE_URL="http://localhost:5173",
+    PASSWORD_RESET_TIMEOUT=1800,
+)
+class PasswordResetTests(APITestCase):
+    def setUp(self):
+        self.password = "ExistingPassword123!Secure"
+        self.user = User.objects.create_user(
+            username="resetstudent",
+            email="resetstudent@scds.saiuniversity.edu.in",
+            password=self.password,
+            role=User.Role.STUDENT,
+        )
+        mail.outbox = []
+
+    def request_reset_link(self):
+        response = self.client.post(
+            "/api/v1/auth/password-reset/",
+            {"email": self.user.email},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["detail"],
+            (
+                "If an account with this email address exists, "
+                "password reset instructions have been sent."
+            ),
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        reset_url = next(
+            line.strip()
+            for line in mail.outbox[0].body.splitlines()
+            if line.startswith("http://localhost:5173/reset-password?")
+        )
+        return parse_qs(urlparse(reset_url).query)
+
+    def test_password_reset_request_sends_a_time_limited_link(self):
+        params = self.request_reset_link()
+
+        self.assertIn("uid", params)
+        self.assertIn("token", params)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertIn("30 minutes", mail.outbox[0].body)
+
+    def test_password_reset_request_does_not_disclose_unknown_email(self):
+        mail.outbox.clear()
+        response = self.client.post(
+            "/api/v1/auth/password-reset/",
+            {"email": "not-registered@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["detail"],
+            (
+                "If an account with this email address exists, "
+                "password reset instructions have been sent."
+            ),
+        )
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_password_reset_changes_password_and_invalidates_old_sessions(self):
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "username": self.user.username,
+                "password": self.password,
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        old_refresh_token = login_response.data["refresh"]
+
+        params = self.request_reset_link()
+        new_password = "NewVeryStrongPassword456!Secure"
+        response = self.client.post(
+            "/api/v1/auth/password-reset/confirm/",
+            {
+                "uid": params["uid"][0],
+                "token": params["token"][0],
+                "new_password": new_password,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_password))
+        self.assertFalse(self.user.check_password(self.password))
+
+        old_session_response = self.client.post(
+            "/api/v1/auth/refresh/",
+            {"refresh": old_refresh_token},
+            format="json",
+        )
+        self.assertEqual(
+            old_session_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+        reused_link_response = self.client.post(
+            "/api/v1/auth/password-reset/confirm/",
+            {
+                "uid": params["uid"][0],
+                "token": params["token"][0],
+                "new_password": "AnotherVeryStrongPassword789!Secure",
+            },
+            format="json",
+        )
+        self.assertEqual(
+            reused_link_response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_invalid_reset_token_does_not_change_password(self):
+        params = self.request_reset_link()
+        response = self.client.post(
+            "/api/v1/auth/password-reset/confirm/",
+            {
+                "uid": params["uid"][0],
+                "token": "invalid-token",
+                "new_password": "NewVeryStrongPassword456!Secure",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.password))
+
+    def test_password_reset_enforces_password_validators(self):
+        params = self.request_reset_link()
+        response = self.client.post(
+            "/api/v1/auth/password-reset/confirm/",
+            {
+                "uid": params["uid"][0],
+                "token": params["token"][0],
+                "new_password": "password",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password", response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.password))

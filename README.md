@@ -186,6 +186,8 @@ Open http://127.0.0.1:8000/. Keep the backend terminal running and start the fro
 | `POST /api/v1/auth/refresh/` | Refresh an access token |
 | `GET /api/v1/auth/me/` | Get the authenticated user's profile |
 | `POST /api/v1/auth/logout/` | Blacklist a refresh token |
+| `POST /api/v1/auth/password-reset/` | Request a one-time password reset link by email |
+| `POST /api/v1/auth/password-reset/confirm/` | Validate a reset token and set a new password |
 | `GET/POST/PUT/PATCH /api/v1/students/profile/` | Manage the authenticated student's profile |
 | `GET/POST/PUT/PATCH /api/v1/alumni/profile/` | Manage the authenticated alumnus profile |
 | `GET /api/v1/alumni/search/` | Search verified alumni |
@@ -281,6 +283,9 @@ docker compose down -v
 - `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, and `PGPORT` configure Django's database connection.
 - `STUDENT_EMAIL_DOMAIN` configures the allowed domain for student registration. The default is `scds.saiuniversity.edu.in`; confirm this with the university before production use.
 - `CORS_ALLOWED_ORIGINS` configures allowed frontend development origins.
+- `FRONTEND_BASE_URL` is the public frontend origin used to build password reset links.
+- `PASSWORD_RESET_TIMEOUT` controls reset-link validity in seconds (default: 1800 / 30 minutes).
+- `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, and `DEFAULT_FROM_EMAIL` configure password-reset email delivery. The local example uses Django's console email backend, so the reset URL is printed in backend logs. Configure SMTP before deploying.
 - `DJANGO_SECRET_KEY` must be a private, sufficiently long random value outside local debug development.
 
 ## Project status
@@ -304,3 +309,18 @@ Alumni can submit a private PDF graduation proof from their profile. IPC adminis
 Students can search the verified alumni directory and submit referral requests with a target opportunity URL, PDF resume and message. Alumni can accept or decline requests, ask for additional information, and mark accepted requests as referred. Both participants can view the request history; resume downloads are limited to the student and assigned alumnus. Referral events generate in-app notifications.
 
 See [docs/alumni-referrals-and-verification.md](docs/alumni-referrals-and-verification.md) for the workflow and API details.
+
+
+## Password recovery
+
+The login page links to **Forgot password?**. Users enter the email address registered to their account and receive a one-time link to the frontend reset page. The API deliberately returns the same confirmation for registered and unregistered email addresses to avoid disclosing account membership.
+
+Reset links expire after 30 minutes by default, are single-use, and are validated by Django's password-reset token generator. New passwords are checked against the configured Django password validators. After a successful reset, outstanding JWT refresh tokens for that account are blacklisted.
+
+For local development, use the console email backend configured in `.env.example`. Submit the forgot-password form and inspect the backend output:
+
+```powershell
+docker compose logs --tail=100 backend
+```
+
+Open the `/reset-password?uid=...&token=...` URL printed in the email body. For production, set `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, configure the SMTP variables, set `FRONTEND_BASE_URL` to the deployed frontend origin, and use HTTPS.

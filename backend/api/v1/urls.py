@@ -2,13 +2,29 @@ from django.urls import include, path
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from apps.accounts.views import LogoutView, MeView, RegisterView
+from apps.accounts.views import (
+    LogoutView,
+    MeView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    RegisterView,
+)
 
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="account-register"),
     path("auth/login/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    path(
+        "auth/password-reset/",
+        PasswordResetRequestView.as_view(),
+        name="password-reset-request",
+    ),
+    path(
+        "auth/password-reset/confirm/",
+        PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
     path("auth/me/", MeView.as_view(), name="account-profile"),
     path("auth/logout/", LogoutView.as_view(), name="account-logout"),
     path("students/", include("apps.students.urls")),

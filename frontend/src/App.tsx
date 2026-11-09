@@ -5,6 +5,8 @@ import Home from "./Home";
 import SimplePage from "./SimplePage";
 import { opportunityRoutes } from "./features/opportunities/routes";
 import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RegisterPage from "./pages/RegisterPage";
 import RecruiterDashboardPage from "./pages/RecruiterDashboardPage";
 import IpcDashboardPage from "./pages/IpcDashboardPage";
@@ -25,6 +27,8 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/login/:role", element: <LoginPage /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/register/:role", element: <RegisterPage /> },
       ...opportunityRoutes,
