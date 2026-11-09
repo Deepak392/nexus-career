@@ -168,7 +168,9 @@ export async function getPendingAlumniVerifications(): Promise<{
   count: number;
   results: AlumniProfile[];
 }> {
-  return authenticatedRequest("/alumni/ipc/pending-verification/");
+  return authenticatedRequest<{ count: number; results: AlumniProfile[] }>(
+    "/alumni/ipc/pending-verification/"
+  );
 }
 
 export async function downloadAlumniGraduationProof(id: number): Promise<Blob> {
