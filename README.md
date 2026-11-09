@@ -2,7 +2,7 @@
 
 Nexus Career is a university careers platform for discovering jobs and internships and supporting student, recruiter, IPC, and alumni workflows.
 
-The repository is under active development. The current implementation includes JWT authentication, student and alumni profiles, recruiter company and opportunity approval workflows, published-opportunity discovery, profile-based eligibility evaluation, private PDF resume uploads, student platform applications, and application tracking. Referrals, notifications, analytics, and recruiter/IPC application review actions remain future increments.
+The repository is under active development. Implemented increments include JWT authentication and role-based access, student and alumni profiles, recruiter/company verification, opportunity approval and discovery, profile-based eligibility checks, private PDF resume handling, platform applications and tracking, in-app notifications, alumni verification, and alumni referral workflows. Recruiter/IPC application review, broader administrative analytics, report exports, and email reminders remain follow-on work.
 
 ## Technology stack
 
@@ -29,9 +29,11 @@ nexus-career/
 │   ├── apps/
 │   │   ├── accounts/        # Custom user model and JWT authentication
 │   │   ├── students/        # Student profile API
-│   │   ├── alumni/          # Alumni profile and search API
-│   │   ├── recruiters/      # Recruiter/company domain models (API work pending)
-│   │   └── opportunities/   # Opportunity model and published listing API
+│   │   ├── alumni/          # Alumni verification, directory and referral workflows
+│   │   ├── recruiters/      # Company verification and recruiter opportunity workflows
+│   │   ├── opportunities/   # Opportunity lifecycle, eligibility and discovery
+│   │   ├── applications/    # Platform applications and status history
+│   │   └── notifications/  # Per-user in-app notification inbox
 │   ├── config/              # Django settings and entry points
 │   ├── requirements/        # Runtime and development dependency sets
 │   ├── tests/               # Cross-module backend tests
@@ -127,7 +129,7 @@ npm run dev
 
 Vite prints the local URL; the default is http://localhost:5173/.
 
-The current opportunities UI uses mock data and demo local-storage sign-in. It is not yet wired to the Django authentication or opportunity APIs.
+The frontend uses the Django REST API for authentication, opportunity discovery, student applications, recruiter/IPC workflows, notifications, and alumni/referral workflows. Configure `VITE_API_BASE_URL` when the backend is not available at `http://localhost:8000/api/v1`.
 
 ## Run the backend directly in VS Code (database in Docker)
 
@@ -187,10 +189,22 @@ Open http://127.0.0.1:8000/. Keep the backend terminal running and start the fro
 | `GET/POST/PUT/PATCH /api/v1/students/profile/` | Manage the authenticated student's profile |
 | `GET/POST/PUT/PATCH /api/v1/alumni/profile/` | Manage the authenticated alumnus profile |
 | `GET /api/v1/alumni/search/` | Search verified alumni |
+| `POST /api/v1/alumni/graduation-proof/` | Submit private PDF graduation evidence |
+| `GET /api/v1/alumni/ipc/pending-verification/` | List alumni awaiting IPC verification |
+| `GET /api/v1/alumni/ipc/{id}/proof/` | Download proof (IPC only) |
+| `POST /api/v1/alumni/ipc/{id}/verify/` | Verify an alumni profile (IPC only) |
+| `POST /api/v1/alumni/ipc/{id}/reject/` | Reject an alumni profile with a reason (IPC only) |
+| `GET/POST /api/v1/alumni/referral-requests/` | List own referrals or submit a student referral request |
+| `GET /api/v1/alumni/referral-requests/{id}/` | Retrieve a referral visible to the requesting participant |
+| `POST /api/v1/alumni/referral-requests/{id}/{action}/` | Accept, decline, request/respond to information, or mark referred |
+| `GET /api/v1/alumni/referral-requests/{id}/resume/` | Download a referral resume (participants only) |
+| `GET /api/v1/alumni/metrics/` | Read the authenticated alumnus's engagement metrics |
+| `GET /api/v1/notifications/` | List the authenticated user's notifications |
+| `POST /api/v1/notifications/{id}/read/` | Mark an owned notification as read |
 | `GET /api/v1/opportunities/` | List published, unexpired opportunities |
 | `GET /api/v1/opportunities/{id}/` | Retrieve a published opportunity |
 
-Opportunity create/update/approval actions are intentionally not exposed through the public listing API until recruiter and IPC authorization workflows are implemented.
+Opportunity write and approval actions use the authenticated recruiter and IPC routes under `/api/v1/recruiters/` and `/api/v1/ipc/`. The public opportunity endpoints remain read-only and expose published, unexpired listings only.
 
 ## Tests and quality checks
 
@@ -271,7 +285,7 @@ docker compose down -v
 
 ## Project status
 
-Nexus Career is an active university software-engineering project. Refer to the SRS and the module-specific documentation in `docs/` for the intended product scope. The repository's implemented API surface is narrower than the full SRS and is being expanded incrementally.
+Nexus Career is an active university software-engineering project. Refer to the SRS and the module-specific documentation in `docs/` for the intended product scope. The repository's implemented API surface is narrower than the full SRS and is being expanded incrementally. See [Sprint 1–3 delivery notes](docs/sprint-1-3-delivery.md) for implemented scope, SRS traceability, and remaining work.
 
 
 ## Student eligibility and applications
@@ -281,3 +295,12 @@ Students can maintain their academic profile and PDF resume at /profile. The opp
 Platform applications are submitted through the authenticated API and retain a private copy of the resume used at submission. Students can track their applications at /applications. External opportunities link directly to the recruiter's configured application URL; Nexus Career does not claim to track an external submission.
 
 See docs/student-eligibility-and-applications.md for the API contract and workflow details.
+
+
+## Alumni verification and referrals
+
+Alumni can submit a private PDF graduation proof from their profile. IPC administrators review pending submissions in the IPC dashboard and can verify or reject a profile with a recorded reason. Only verified alumni who have enabled referral availability appear in the student directory.
+
+Students can search the verified alumni directory and submit referral requests with a target opportunity URL, PDF resume and message. Alumni can accept or decline requests, ask for additional information, and mark accepted requests as referred. Both participants can view the request history; resume downloads are limited to the student and assigned alumnus. Referral events generate in-app notifications.
+
+See [docs/alumni-referrals-and-verification.md](docs/alumni-referrals-and-verification.md) for the workflow and API details.
