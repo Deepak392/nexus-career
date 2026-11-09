@@ -150,3 +150,37 @@ export async function performReferralAction(
 export async function downloadReferralResume(id: number): Promise<Blob> {
   return authenticatedBlobRequest(`/alumni/referral-requests/${id}/resume/`);
 }
+
+export interface AlumniReview {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  department: string;
+  degree_programme: string;
+  graduation_year: number;
+  current_company: string;
+  designation: string;
+  industry: string;
+  created_at: string;
+}
+
+export async function getPendingAlumni(): Promise<AlumniReview[]> {
+  const response = await authenticatedRequest<{ results: AlumniReview[] }>(
+    "/ipc/alumni/pending/"
+  );
+  return response.results;
+}
+
+export async function verifyAlumni(id: number): Promise<AlumniReview> {
+  return authenticatedRequest<AlumniReview>(`/ipc/alumni/${id}/verify/`, {
+    method: "POST",
+  });
+}
+
+export async function rejectAlumni(id: number, reason: string): Promise<AlumniReview> {
+  return authenticatedRequest<AlumniReview>(`/ipc/alumni/${id}/reject/`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
