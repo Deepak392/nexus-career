@@ -30,3 +30,11 @@ test:
 clean:
 	@echo "WARNING: this deletes the local database volume."
 	docker compose down -v
+
+backup:
+	docker compose exec -T db pg_dump -U nexus_user -d nexus_career -Fc -f /tmp/backup.dump
+	docker compose cp db:/tmp/backup.dump ./backups/latest.dump
+
+restore:
+	docker compose cp ./backups/latest.dump db:/tmp/backup.dump
+	docker compose exec -T db pg_restore -U nexus_user -d nexus_career --clean --if-exists /tmp/backup.dump

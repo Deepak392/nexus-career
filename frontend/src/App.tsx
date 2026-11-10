@@ -1,18 +1,69 @@
-﻿import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
 import Layout from "./Layout";
 import Home from "./Home";
 import SimplePage from "./SimplePage";
 import { opportunityRoutes } from "./features/opportunities/routes";
+import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import RegisterPage from "./pages/RegisterPage";
+import RecruiterDashboardPage from "./pages/RecruiterDashboardPage";
+import IpcDashboardPage from "./pages/IpcDashboardPage";
+import ApplicationsPage from "./pages/ApplicationsPage";
+import StudentProfilePage from "./pages/StudentProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
+import AlumniDashboardPage from "./pages/AlumniDashboardPage";
+import AlumniProfilePage from "./pages/AlumniProfilePage";
+import AlumniReferralsPage from "./pages/AlumniReferralsPage";
+import AlumniNetworkPage from "./pages/AlumniNetworkPage";
+import StudentReferralRequestsPage from "./pages/StudentReferralRequestsPage";
+import RequireRole from "./components/RequireRole";
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { path: "/", element: <Home /> },
+      { path: "/login", element: <LoginPage /> },
+      { path: "/login/:role", element: <LoginPage /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
+      { path: "/register", element: <RegisterPage /> },
+      { path: "/register/:role", element: <RegisterPage /> },
       ...opportunityRoutes,
+      {
+        path: "/recruiter",
+        element: <RequireRole allowedRoles={["RECRUITER"]}><RecruiterDashboardPage /></RequireRole>,
+      },
+      {
+        path: "/ipc",
+        element: <RequireRole allowedRoles={["IPC_ADMIN"]}><IpcDashboardPage /></RequireRole>,
+      },
       { path: "/saved", element: <SimplePage title="My Saved Jobs" text="Jobs you save will appear here." /> },
-      { path: "/applications", element: <SimplePage title="My Applications" text="Track your applications here." /> },
-      { path: "/profile", element: <SimplePage title="Profile" text="Your profile details will appear here." /> },
+      { path: "/applications", element: <ApplicationsPage /> },
+      { path: "/notifications", element: <NotificationsPage /> },
+      {
+        path: "/alumni",
+        element: <RequireRole allowedRoles={["ALUMNI"]}><AlumniDashboardPage /></RequireRole>,
+      },
+      {
+        path: "/alumni/profile",
+        element: <RequireRole allowedRoles={["ALUMNI"]}><AlumniProfilePage /></RequireRole>,
+      },
+      {
+        path: "/alumni/referrals",
+        element: <RequireRole allowedRoles={["ALUMNI"]}><AlumniReferralsPage /></RequireRole>,
+      },
+      {
+        path: "/alumni/network",
+        element: <RequireRole allowedRoles={["STUDENT"]}><AlumniNetworkPage /></RequireRole>,
+      },
+      {
+        path: "/referrals",
+        element: <RequireRole allowedRoles={["STUDENT"]}><StudentReferralRequestsPage /></RequireRole>,
+      },
+      { path: "/profile", element: <StudentProfilePage /> },
       { path: "/settings", element: <SimplePage title="Settings" text="Account settings will appear here." /> },
     ],
   },

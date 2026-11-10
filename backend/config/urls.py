@@ -18,7 +18,7 @@ urlpatterns = [
 
     # Nexus Career API
     path("api/v1/", include("api.v1.urls")),
-
+    path("api-auth/", include("rest_framework.urls")),
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(

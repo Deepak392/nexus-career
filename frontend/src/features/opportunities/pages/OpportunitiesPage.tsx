@@ -1,5 +1,5 @@
 import { useOpportunities } from "../hooks/useOpportunities";
-import { typeOptions, locationOptions } from "../api";
+import { typeOptions } from "../api";
 import OpportunityCard from "../components/OpportunityCard";
 import SearchBar from "../components/SearchBar";
 import FilterPanel from "../components/FilterPanel";
@@ -11,11 +11,11 @@ export default function OpportunitiesPage() {
   return (
     <main className="container">
       <h1>Opportunities</h1>
-      <SearchBar value={query.search ?? ""} onChange={(v) => update({ q: v })} />
+      <p className="muted">Published jobs and internships approved by the Internship and Placement Cell.</p>
+      <SearchBar value={query.search ?? ""} onChange={(value) => update({ q: value })} />
       <FilterPanel
         query={query}
         types={typeOptions}
-        locations={locationOptions}
         onChange={update}
         onClear={clear}
       />
@@ -29,15 +29,15 @@ export default function OpportunitiesPage() {
 
       {loading && !error && (
         <div className="grid">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="card skeleton" />
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="card skeleton" />
           ))}
         </div>
       )}
 
       {!loading && !error && data && data.items.length === 0 && (
         <div className="state">
-          <p>No opportunities found.</p>
+          <p>No published opportunities match your search.</p>
           <button onClick={clear}>Clear filters</button>
         </div>
       )}
@@ -46,15 +46,15 @@ export default function OpportunitiesPage() {
         <>
           <p className="muted">{data.total} result(s)</p>
           <div className="grid">
-            {data.items.map((o) => (
-              <OpportunityCard key={o.id} opportunity={o} />
+            {data.items.map((opportunity) => (
+              <OpportunityCard key={opportunity.id} opportunity={opportunity} />
             ))}
           </div>
           <Pagination
             page={data.page}
             total={data.total}
             limit={data.limit}
-            onChange={(p) => update({ page: String(p) })}
+            onChange={(page) => update({ page: String(page) })}
           />
         </>
       )}

@@ -1,4 +1,10 @@
-Django>=5.2,<5.3
-djangorestframework>=3.16,<3.17
-drf-spectacular>=0.28,<0.29
-psycopg[binary]>=3.2,<4
+asgiref==3.13.0
+Django==5.2.18
+djangorestframework==3.18.3
+psycopg2-binary==2.9.11
+python-dotenv==1.2.4
+sqlparse==0.6.0
+tzdata==2026.6
+django-cors-headers==4.9.0
+drf-spectacular==0.30.0
+djangorestframework-simplejwt==5.5.1

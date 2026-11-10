@@ -8,11 +8,12 @@ export interface Opportunity {
   compensation: string;
   skills: string[];
   eligibility: string;
-  openings: number;
+  openings?: number;
   postedBy: "Recruiter" | "Alumni" | "Placement Cell";
   status: "PUBLISHED" | "PENDING_APPROVAL" | "CLOSED";
   source: "Internal" | "External";
   applicationMethod: "Apply on portal" | "External link";
+  externalApplicationUrl?: string;
   eligible?: boolean;
   matchScore?: number;
   deadline: string;
