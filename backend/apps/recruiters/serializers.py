@@ -119,3 +119,33 @@ class AuditLogEntrySerializer(serializers.Serializer):
     target = serializers.CharField()
     details = serializers.DictField()
     created_at = serializers.DateTimeField()
+
+
+class AdminDashboardMetricsSerializer(serializers.Serializer):
+    active_opportunities = serializers.IntegerField(
+        help_text="Number of published opportunities currently open for applications."
+    )
+    students = serializers.IntegerField(
+        help_text="Total number of active student accounts."
+    )
+    verified_recruiters = serializers.IntegerField(
+        help_text="Number of verified companies or recruiters."
+    )
+    applications = serializers.IntegerField(
+        help_text="Total number of student applications submitted."
+    )
+    pending_approvals = serializers.IntegerField(
+        help_text="Number of opportunities awaiting IPC approval."
+    )
+    total_opportunities = serializers.IntegerField(
+        required=False,
+        help_text="Total number of all opportunities across all lifecycle states."
+    )
+    pending_companies = serializers.IntegerField(
+        required=False,
+        help_text="Number of companies pending IPC verification."
+    )
+    verified_alumni = serializers.IntegerField(
+        required=False,
+        help_text="Number of verified alumni profiles."
+    )

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .admin_views import (
+    AdminDashboardMetricsView,
     AuditLogListView,
     CompanyRejectView,
     CompanyVerifyView,
@@ -22,4 +23,5 @@ urlpatterns = [
     path("users/<int:pk>/suspend/", UserSuspendView.as_view(), name="ipc-user-suspend"),
     path("users/<int:pk>/reactivate/", UserReactivateView.as_view(), name="ipc-user-reactivate"),
     path("audit-logs/", AuditLogListView.as_view(), name="ipc-audit-logs"),
+    path("dashboard/metrics/", AdminDashboardMetricsView.as_view(), name="ipc-dashboard-metrics"),
 ]

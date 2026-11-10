@@ -20,11 +20,13 @@ from rest_framework.views import APIView
 from api.core import audit, events
 from api.core.permissions import IsIPCAdmin, IsIPCAdminOrSystemAdmin
 from apps.accounts.models import User
+from apps.applications.models import Application
 from apps.opportunities.models import Opportunity
 from apps.opportunities.serializers import OpportunitySerializer
 
 from .models import Company, RecruiterProfile, WorkflowAuditEvent
 from .serializers import (
+    AdminDashboardMetricsSerializer,
     AuditLogEntrySerializer,
     CompanyProfileSerializer,
     RecruiterVerificationResponseSerializer,
@@ -616,3 +618,95 @@ class AuditLogListView(generics.ListAPIView):
         if page is not None:
             return self.get_paginated_response(results)
         return Response(results, status=status.HTTP_200_OK)
+
+
+class AdminDashboardMetricsView(APIView):
+    """R5: Aggregated metrics dashboard for authorized IPC and System administrators.
+
+    Exposes the 5 core KPI metrics required by SRS §3.8 and the Delivery Plan:
+    1. active_opportunities
+    2. students
+    3. verified_recruiters
+    4. applications
+    5. pending_approvals
+    Plus supportive breakdowns for IPC administrative monitoring.
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsIPCAdminOrSystemAdmin]
+
+    @extend_schema(
+        summary="Get IPC Admin Dashboard Metrics",
+        description=(
+            "Retrieves aggregate placement workflow and platform KPI metrics. "
+            "Restricted to authorized IPC and System administrators."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=AdminDashboardMetricsSerializer,
+                description="Aggregated platform metrics successfully retrieved.",
+            ),
+            401: OpenApiResponse(description="Unauthenticated request."),
+            403: OpenApiResponse(description="Forbidden: Requires IPC or System administrator role."),
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        now = timezone.now()
+
+        # 1. Active Opportunities: PUBLISHED status with future application deadline
+        active_opps_count = Opportunity.objects.filter(
+            status=Opportunity.Status.PUBLISHED,
+            application_deadline__gt=now,
+        ).count()
+
+        # 2. Students: Active student accounts
+        students_count = User.objects.filter(
+            role=User.Role.STUDENT,
+            is_active=True,
+        ).count()
+
+        # 3. Verified Recruiters / Companies:
+        # Number of recruiters whose associated company is verified, falling back to verified companies
+        verified_recruiter_users = User.objects.filter(
+            role=User.Role.RECRUITER,
+            recruiter_profile__company__verification_status=Company.VerificationStatus.VERIFIED,
+        ).count()
+        verified_companies_count = Company.objects.filter(
+            verification_status=Company.VerificationStatus.VERIFIED,
+        ).count()
+        verified_recruiters_metric = max(verified_recruiter_users, verified_companies_count)
+
+        # 4. Applications: Total applications submitted across all opportunities
+        applications_count = Application.objects.count()
+
+        # 5. Pending Approvals: Opportunities awaiting IPC review
+        pending_approvals_count = Opportunity.objects.filter(
+            status=Opportunity.Status.PENDING_APPROVAL,
+        ).count()
+
+        # Auxiliary breakdowns
+        total_opps_count = Opportunity.objects.count()
+        pending_companies_count = Company.objects.filter(
+            verification_status=Company.VerificationStatus.PENDING,
+        ).count()
+
+        try:
+            from apps.alumni.models import AlumniProfile
+            verified_alumni_count = AlumniProfile.objects.filter(
+                verification_status=AlumniProfile.VerificationStatus.VERIFIED,
+            ).count()
+        except Exception:
+            verified_alumni_count = 0
+
+        payload = {
+            "active_opportunities": active_opps_count,
+            "students": students_count,
+            "verified_recruiters": verified_recruiters_metric,
+            "applications": applications_count,
+            "pending_approvals": pending_approvals_count,
+            "total_opportunities": total_opps_count,
+            "pending_companies": pending_companies_count,
+            "verified_alumni": verified_alumni_count,
+        }
+
+        serializer = AdminDashboardMetricsSerializer(payload)
+        return Response(serializer.data, status=status.HTTP_200_OK)

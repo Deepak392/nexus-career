@@ -84,10 +84,15 @@ def role_user_factory(user_factory):
         "IPC Admin": User.Role.IPC_ADMIN,
         "Alumni": User.Role.ALUMNI,
         "System Admin": User.Role.SYSTEM_ADMIN,
+        User.Role.STUDENT: User.Role.STUDENT,
+        User.Role.RECRUITER: User.Role.RECRUITER,
+        User.Role.IPC_ADMIN: User.Role.IPC_ADMIN,
+        User.Role.ALUMNI: User.Role.ALUMNI,
+        User.Role.SYSTEM_ADMIN: User.Role.SYSTEM_ADMIN,
     }
 
     def make_role_user(role, **fields):
-        if role not in ROLE_NAMES:
+        if role not in role_values:
             raise ValueError(f"Unknown test role: {role}")
 
         fields.setdefault("role", role_values[role])

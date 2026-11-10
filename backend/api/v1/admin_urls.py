@@ -5,6 +5,7 @@ from apps.alumni.views import (
     PendingAlumniVerificationView,
 )
 from apps.recruiters.admin_views import (
+    AdminDashboardMetricsView,
     AuditLogListView,
     OpportunityApproveView,
     OpportunityRejectView,
@@ -33,4 +34,8 @@ urlpatterns = [
 
     # R4: Audit trail views
     path("audit-logs/", AuditLogListView.as_view(), name="admin-audit-logs"),
+
+    # R5: Admin dashboard metrics
+    path("dashboard/metrics/", AdminDashboardMetricsView.as_view(), name="admin-dashboard-metrics"),
+    path("metrics/", AdminDashboardMetricsView.as_view(), name="admin-metrics"),
 ]
