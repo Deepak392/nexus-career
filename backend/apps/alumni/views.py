@@ -177,7 +177,8 @@ class ReferralRequestListCreateView(APIView):
                 referral = ReferralRequest.objects.create(
                     student=request.user,
                     alumni_profile=alumni_profile,
-                    opportunity_url=serializer.validated_data["opportunity_url"],
+                    opportunity=serializer.validated_data.get("opportunity"),
+                    opportunity_url=serializer.validated_data.get("opportunity_url"),
                     resume=serializer.validated_data["resume"],
                     note=serializer.validated_data["note"],
                 )
@@ -201,7 +202,7 @@ class ReferralRequestListCreateView(APIView):
                 )
         except IntegrityError:
             raise ValidationError({
-                "opportunity_url": (
+                "non_field_errors": (
                     "You already have an active referral request to this alumnus "
                     "for this opportunity."
                 )

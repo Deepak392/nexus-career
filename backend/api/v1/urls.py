@@ -1,5 +1,4 @@
 from django.urls import include, path
-
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.views import (
@@ -9,7 +8,6 @@ from apps.accounts.views import (
     PasswordResetRequestView,
     RegisterView,
 )
-
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="account-register"),
@@ -34,4 +32,5 @@ urlpatterns = [
     path("opportunities/", include("apps.opportunities.urls")),
     path("recruiters/", include("apps.recruiters.urls")),
     path("ipc/", include("apps.recruiters.ipc_urls")),
+
 ]

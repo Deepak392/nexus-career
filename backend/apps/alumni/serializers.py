@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.students.validators import validate_pdf_resume
 
 from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
+from apps.opportunities.models import Opportunity
 
 User = get_user_model()
 
@@ -120,6 +121,16 @@ class ReferralRequestSerializer(serializers.ModelSerializer):
         source="alumni_profile.designation",
         read_only=True,
     )
+    opportunity_id = serializers.IntegerField(
+        source="opportunity.id",
+        read_only=True,
+        allow_null=True,
+    )
+    opportunity_title = serializers.CharField(
+        source="opportunity.title",
+        read_only=True,
+        allow_null=True,
+    )
     has_resume = serializers.SerializerMethodField()
     history = ReferralRequestHistorySerializer(many=True, read_only=True)
 
@@ -135,12 +146,15 @@ class ReferralRequestSerializer(serializers.ModelSerializer):
             "alumni_company",
             "alumni_designation",
             "opportunity_url",
+            "opportunity_id",
+            "opportunity_title",
             "note",
             "has_resume",
             "status",
             "history",
             "created_at",
             "updated_at",
+
         ]
         read_only_fields = fields
 
@@ -165,7 +179,16 @@ class ReferralRequestSerializer(serializers.ModelSerializer):
 
 class ReferralRequestCreateSerializer(serializers.Serializer):
     alumni_profile_id = serializers.IntegerField(min_value=1)
-    opportunity_url = serializers.URLField(max_length=500)
+
+    opportunity = serializers.PrimaryKeyRelatedField(
+        queryset=Opportunity.objects.all(),
+        required=False,
+    )
+    opportunity_url = serializers.URLField(
+        max_length=500,
+        required=False,
+    )
+
     resume = serializers.FileField(
         allow_empty_file=False,
         validators=[validate_pdf_resume],
@@ -178,12 +201,32 @@ class ReferralRequestCreateSerializer(serializers.Serializer):
             verification_status=AlumniProfile.VerificationStatus.VERIFIED,
             is_open_to_referrals=True,
         ).first()
+
         if profile is None:
             raise serializers.ValidationError(
                 "This alumni profile is unavailable for referral requests."
             )
+
         self.context["alumni_profile"] = profile
         return value
+
+    def validate_opportunity(self, value):
+        if not value.is_open:
+            raise serializers.ValidationError(
+                "This opportunity is not currently open."
+            )
+        return value
+
+    def validate(self, attrs):
+        has_opportunity = "opportunity" in attrs
+        has_url = "opportunity_url" in attrs
+
+        if has_opportunity == has_url:
+            raise serializers.ValidationError(
+                "Provide exactly one of opportunity or opportunity_url."
+            )
+
+        return attrs
 
     def validate_note(self, value):
         if len(value.strip()) < 10:
@@ -191,6 +234,7 @@ class ReferralRequestCreateSerializer(serializers.Serializer):
                 "Please provide at least 10 characters about the referral request."
             )
         return value.strip()
+
 
 
 class ReferralRequestActionSerializer(serializers.Serializer):

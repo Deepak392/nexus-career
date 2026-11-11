@@ -7,6 +7,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.alumni.models import AlumniProfile, ReferralRequest, ReferralRequestHistory
 from apps.notifications.models import Notification
+from datetime import timedelta
+
+from django.utils import timezone
+from apps.opportunities.models import Opportunity
+from apps.recruiters.models import Company
 
 
 User = get_user_model()
@@ -206,6 +211,26 @@ class AlumniReferralWorkflowTests(APITestCase):
         self.list_url = reverse("alumni-referral-list-create")
         self.opportunity_url = "https://careers.example.com/jobs/software-engineer"
 
+        self.company = Company.objects.create(
+    name="Nexus Test Technologies",
+    industry="Technology",
+    contact_email="hr@nexustest.com",
+    verification_status=Company.VerificationStatus.VERIFIED,
+)
+
+        self.opportunity = Opportunity.objects.create(
+    company=self.company,
+    created_by=self.alumni_user,
+    title="Software Engineer",
+    description="Backend software engineering role.",
+    opportunity_type=Opportunity.OpportunityType.JOB,
+    work_mode=Opportunity.WorkMode.REMOTE,
+    location="Remote",
+    application_deadline=timezone.now() + timedelta(days=30),
+    status=Opportunity.Status.PUBLISHED,
+    published_at=timezone.now(),
+)
+
     def pdf_upload(self):
         return SimpleUploadedFile(
             "resume.pdf",
@@ -249,7 +274,47 @@ class AlumniReferralWorkflowTests(APITestCase):
             notification.notification_type,
             Notification.NotificationType.REFERRAL_REQUEST,
         )
+    def test_student_can_submit_referral_request_for_platform_opportunity(self):
+        self.client.force_authenticate(user=self.student)
 
+        response = self.client.post(
+            self.list_url,
+            {
+                "alumni_profile_id": self.profile.pk,
+                "opportunity": self.opportunity.pk,
+                "resume": self.pdf_upload(),
+                "note": "I am interested in this software engineering role.",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+        referral = ReferralRequest.objects.get(pk=response.data["id"])
+        self.assertEqual(referral.opportunity, self.opportunity)
+        self.assertIsNone(referral.opportunity_url)
+        self.assertEqual(response.data["opportunity_id"], self.opportunity.pk)
+        self.assertEqual(response.data["opportunity_title"], self.opportunity.title)
+
+
+    def test_student_cannot_request_referral_for_closed_opportunity(self):
+        self.opportunity.status = Opportunity.Status.CLOSED
+        self.opportunity.save(update_fields=["status"])
+
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(
+            self.list_url,
+            {
+                "alumni_profile_id": self.profile.pk,
+                "opportunity": self.opportunity.pk,
+                "resume": self.pdf_upload(),
+                "note": "I am interested in this software engineering role.",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     def test_only_verified_and_available_alumni_can_receive_requests(self):
         self.client.force_authenticate(user=self.student)
         self.other_profile.verification_status = AlumniProfile.VerificationStatus.PENDING
@@ -321,6 +386,26 @@ class AlumniReferralWorkflowTests(APITestCase):
             ).count(),
             2,
         )
+        student_notifications = Notification.objects.filter(
+            recipient=self.student,
+            referral_request=referral,
+            notification_type=Notification.NotificationType.REFERRAL_STATUS,
+        )
+
+        self.assertEqual(student_notifications.count(), 2)
+
+        messages = set(
+            student_notifications.values_list("message", flat=True)
+        )
+
+        self.assertIn(
+            "Your referral request has been accepted.",
+            messages,
+        )
+        self.assertIn(
+            "Your alumnus has marked this referral as completed.",
+            messages,
+        )
 
     def test_alumni_can_decline_pending_request(self):
         referral = self.create_request()
@@ -333,6 +418,21 @@ class AlumniReferralWorkflowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], ReferralRequest.Status.DECLINED)
 
+        notification = Notification.objects.get(
+            recipient=self.student,
+            referral_request=referral,
+            notification_type=Notification.NotificationType.REFERRAL_STATUS,
+        )
+
+        self.assertEqual(
+            notification.title,
+            "Referral request updated",
+        )
+        self.assertEqual(
+            notification.message,
+            "Your referral request has been declined. Alumni note: I cannot refer for this opening.",
+        )
+
     def test_more_information_request_and_student_response_are_tracked(self):
         referral = self.create_request()
         self.client.force_authenticate(user=self.alumni_user)
@@ -343,6 +443,21 @@ class AlumniReferralWorkflowTests(APITestCase):
         )
         self.assertEqual(request_info.status_code, status.HTTP_200_OK)
         self.assertEqual(request_info.data["status"], ReferralRequest.Status.PENDING)
+
+        info_notification = Notification.objects.get(
+            recipient=self.student,
+            referral_request=referral,
+            notification_type=Notification.NotificationType.REFERRAL_MORE_INFO,
+        )
+
+        self.assertEqual(
+            info_notification.title,
+            "More information requested",
+        )
+        self.assertEqual(
+            info_notification.message,
+            "An alumnus needs more information: Please share your latest project experience.",
+        )
 
         self.client.force_authenticate(user=self.student)
         response = self.client.post(
@@ -360,6 +475,17 @@ class AlumniReferralWorkflowTests(APITestCase):
             ).count(),
             2,
         )
+        response_notification = Notification.objects.get(
+            recipient=self.alumni_user,
+            referral_request=referral,
+            notification_type=Notification.NotificationType.REFERRAL_STATUS,
+        )
+
+        self.assertEqual(
+            response_notification.message,
+            "Ravi Kumar provided the requested information.",
+        )
+
 
     def test_cannot_mark_pending_request_as_referred(self):
         referral = self.create_request()

@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "apps.students.apps.StudentsConfig",
     "apps.recruiters.apps.RecruitersConfig",
     "apps.opportunities.apps.OpportunitiesConfig",
-    "apps.referrals.apps.ReferralsConfig",
     "apps.applications.apps.ApplicationsConfig",
     "apps.notifications.apps.NotificationsConfig",
     "apps.alumni.apps.AlumniConfig",

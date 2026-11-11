@@ -78,6 +78,7 @@ def referral_resume_upload_path(instance, filename):
 
 
 class ReferralRequest(models.Model):
+
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
         ACCEPTED = "ACCEPTED", "Accepted"
@@ -89,12 +90,25 @@ class ReferralRequest(models.Model):
         on_delete=models.PROTECT,
         related_name="alumni_referral_requests",
     )
+
     alumni_profile = models.ForeignKey(
         AlumniProfile,
         on_delete=models.PROTECT,
         related_name="referral_requests",
     )
-    opportunity_url = models.URLField(max_length=500)
+
+    opportunity = models.ForeignKey(
+        "opportunities.Opportunity",
+        on_delete=models.PROTECT,
+        related_name="alumni_referral_requests",
+        null=True,
+        blank=True,
+    )
+    opportunity_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+    )
     resume = models.FileField(upload_to=referral_resume_upload_path)
     note = models.TextField(max_length=2000)
     status = models.CharField(
@@ -110,9 +124,27 @@ class ReferralRequest(models.Model):
         ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
+                fields=["student", "alumni_profile", "opportunity"],
+                condition=Q(
+                    status__in=["PENDING", "ACCEPTED"],
+                    opportunity__isnull=False,
+                ),
+                name="uniq_active_student_alumni_opp",
+            ),
+            models.UniqueConstraint(
                 fields=["student", "alumni_profile", "opportunity_url"],
-                condition=Q(status__in=["PENDING", "ACCEPTED"]),
-                name="uniq_active_student_alumni_referral",
+                condition=Q(
+                    status__in=["PENDING", "ACCEPTED"],
+                    opportunity_url__isnull=False,
+                ),
+                name="uniq_active_student_alumni_url",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(opportunity__isnull=False, opportunity_url__isnull=True)
+                    | Q(opportunity__isnull=True, opportunity_url__isnull=False)
+                ),
+                name="referral_exactly_one_opportunity_source",
             ),
         ]
         indexes = [
