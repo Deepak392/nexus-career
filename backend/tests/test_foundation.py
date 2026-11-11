@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 from django.urls import reverse
 
+from api.core import events
 from api.core.pagination import TeamPageNumberPagination
 
 
@@ -34,3 +35,46 @@ class FoundationTests(SimpleTestCase):
                 response = self.client.get(reverse(name))
                 self.assertEqual(response.status_code, 200)
                 self.assertIn("text/html", response["Content-Type"])
+                
+    def test_event_handler_receives_emitted_payload(self):
+            received = []
+
+            def handler(payload):
+                received.append(payload)
+
+            events.register_handler("test.event", handler)
+
+            payload = {"application_id": 123}
+            events.emit("test.event", payload)
+
+            self.assertEqual(received, [payload])
+
+    def test_registering_same_handler_twice_does_not_duplicate_dispatch(self):
+        received = []
+
+        def handler(payload):
+            received.append(payload)
+
+        events.register_handler("test.duplicate", handler)
+        events.register_handler("test.duplicate", handler)
+
+        events.emit("test.duplicate", {"id": 1})
+
+        self.assertEqual(len(received), 1)
+        
+    def test_handler_failure_does_not_break_event_dispatch(self):
+        received = []
+
+        def failing_handler(payload):
+            raise RuntimeError("Notification failed")
+
+        def successful_handler(payload):
+            received.append(payload)
+
+        events.register_handler("test.failure", failing_handler)
+        events.register_handler("test.failure", successful_handler)
+
+        payload = {"application_id": 123}
+        events.emit("test.failure", payload)
+
+        self.assertEqual(received, [payload])

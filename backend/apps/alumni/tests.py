@@ -651,3 +651,20 @@ class AlumniGraduationVerificationTests(APITestCase):
         )
         self.assertEqual(self.profile.reviewed_by, self.ipc)
         self.assertTrue(self.profile.verification_rejection_reason)
+
+    def test_student_cannot_access_another_students_referral(self):
+            referral = self.create_request()
+
+            other_student = User.objects.create_user(
+                username="otherstudent",
+                email="otherstudent@example.com",
+                password="TestPassword123!",
+                role=User.Role.STUDENT,
+            )
+
+            self.client.force_authenticate(user=other_student)
+            response = self.client.get(
+                reverse("alumni-referral-detail", args=[referral.pk])
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

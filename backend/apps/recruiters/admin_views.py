@@ -6,7 +6,7 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from api.core import events
 from apps.opportunities.models import Opportunity
 from apps.opportunities.serializers import OpportunitySerializer
 
@@ -165,6 +165,13 @@ class OpportunityApproveView(APIView):
             object_id=opportunity.pk,
             action=WorkflowAuditEvent.Action.OPPORTUNITY_APPROVED,
         )
+        events.emit(
+            "opportunity.approved",
+            {
+                "opportunity_id": opportunity.pk,
+                "deduplication_key": f"opportunity:{opportunity.pk}:approved",
+            },
+        )
         return Response(OpportunitySerializer(opportunity).data)
 
 
@@ -208,4 +215,11 @@ class OpportunityRejectView(APIView):
             action=WorkflowAuditEvent.Action.OPPORTUNITY_REJECTED,
             details={"reason": reason},
         )
+        events.emit(
+        "opportunity.rejected",
+        {
+            "opportunity_id": opportunity.pk,
+            "deduplication_key": f"opportunity:{opportunity.pk}:rejected",
+        },
+    )
         return Response(OpportunitySerializer(opportunity).data)

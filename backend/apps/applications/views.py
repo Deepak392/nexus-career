@@ -9,6 +9,8 @@ from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 
 from apps.notifications.models import Notification
+from apps.notifications.services import create_notification
+from api.core import events
 from apps.opportunities.eligibility import evaluate_eligibility
 from apps.opportunities.models import Opportunity
 from apps.students.models import StudentProfile
@@ -119,15 +121,9 @@ class ApplicationViewSet(
                     changed_by=request.user,
                     note="Application submitted by student.",
                 )
-                Notification.objects.create(
-                    recipient=request.user,
-                    notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
-                    title="Application submitted",
-                    message=(
-                        f"Your application for {opportunity.title} at "
-                        f"{opportunity.company.name} was submitted successfully."
-                    ),
-                    application=application,
+                events.emit(
+                    "application.submitted",
+                    {"application_id": application.pk},
                 )
         except IntegrityError as exc:
             if saved_file:

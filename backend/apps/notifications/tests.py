@@ -2,8 +2,9 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-
+from api.core import events
 from apps.notifications.models import Notification
+from apps.notifications.services import create_notification
 
 User = get_user_model()
 
@@ -59,3 +60,74 @@ class NotificationAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.other_notification.refresh_from_db()
         self.assertIsNone(self.other_notification.read_at)
+
+    def test_duplicate_notification_is_not_created(self):
+        notification_data = {
+            "recipient": self.student,
+            "notification_type": Notification.NotificationType.APPLICATION_SUBMITTED,
+            "title": "Application submitted",
+            "message": "Your application was submitted successfully.",
+            "deduplication_key": "application:100:submitted",
+        }
+
+        first, first_created = create_notification(**notification_data)
+        second, second_created = create_notification(**notification_data)
+
+        self.assertTrue(first_created)
+        self.assertFalse(second_created)
+        self.assertEqual(first.pk, second.pk)
+        self.assertEqual(
+            Notification.objects.filter(
+                deduplication_key="application:100:submitted"
+            ).count(),
+            1,
+        )
+
+    def test_different_deduplication_keys_create_separate_notifications(self):
+        first, first_created = create_notification(
+            recipient=self.student,
+            notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
+            title="Application submitted",
+            message="First application submitted.",
+            deduplication_key="application:100:submitted",
+        )
+
+        second, second_created = create_notification(
+            recipient=self.student,
+            notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
+            title="Application submitted",
+            message="Second application submitted.",
+            deduplication_key="application:101:submitted",
+        )
+
+        self.assertTrue(first_created)
+        self.assertTrue(second_created)
+        self.assertNotEqual(first.pk, second.pk)
+    def test_replayed_event_creates_only_one_notification(self):
+        def notification_handler(payload):
+            create_notification(
+                recipient=self.student,
+                notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
+                title="Application submitted",
+                message="Your application was submitted successfully.",
+                deduplication_key=payload["deduplication_key"],
+            )
+
+        events.register_handler(
+            "test.notification.replay",
+            notification_handler,
+        )
+
+        payload = {
+            "deduplication_key": "application:replay-test:submitted",
+        }
+
+        events.emit("test.notification.replay", payload)
+        events.emit("test.notification.replay", payload)
+
+        self.assertEqual(
+            Notification.objects.filter(
+                deduplication_key="application:replay-test:submitted"
+            ).count(),
+            1,
+        )

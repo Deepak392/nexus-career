@@ -13,7 +13,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
+from api.core import events
 from apps.notifications.models import Notification
+from apps.notifications.services import create_notification
 
 from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
 from .serializers import (
@@ -190,15 +192,12 @@ class ReferralRequestListCreateView(APIView):
                     changed_by=request.user,
                     note="Referral request submitted.",
                 )
-                Notification.objects.create(
-                    recipient=alumni_profile.user,
-                    notification_type=Notification.NotificationType.REFERRAL_REQUEST,
-                    title="New student referral request",
-                    message=(
-                        f"{request.user.get_full_name() or request.user.username} "
-                        "has requested a referral."
-                    ),
-                    referral_request=referral,
+                events.emit(
+                    "referral.requested",
+                    {
+                        "referral_request_id": referral.pk,
+                        "deduplication_key": f"referral:{referral.pk}:requested",
+                    },
                 )
         except IntegrityError:
             raise ValidationError({
@@ -338,7 +337,7 @@ class ReferralRequestActionView(APIView):
                 referral.status = next_status
                 referral.save(update_fields=["status", "updated_at"])
 
-            ReferralRequestHistory.objects.create(
+            history = ReferralRequestHistory.objects.create(
                 referral_request=referral,
                 event=event,
                 previous_status=previous_status,
@@ -346,13 +345,18 @@ class ReferralRequestActionView(APIView):
                 changed_by=actor,
                 note=note,
             )
-            Notification.objects.create(
-                recipient=notification_recipient,
-                notification_type=notification_type,
-                title=notification_title,
-                message=notification_message,
-                referral_request=referral,
-            )
+            events.emit(
+            "referral.updated",
+            {
+                "referral_request_id": referral.pk,
+                "history_id": history.pk,
+                "recipient_id": notification_recipient.pk,
+                "notification_type": notification_type,
+                "title": notification_title,
+                "message": notification_message,
+                "deduplication_key": f"referral:{referral.pk}:history:{history.pk}",
+            },
+        )
 
         referral = referral_queryset_for_user(actor).get(pk=referral.pk)
         return Response(ReferralRequestSerializer(referral).data)
