@@ -1,3 +1,4 @@
+from api.core import audit
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
@@ -21,6 +22,8 @@ from .serializers import (
     AlumniProfileSerializer,
     AlumniSearchSerializer,
     AlumniVerificationActionSerializer,
+    AlumniVerificationResponseSerializer,
+    AlumniVerificationSerializer,
     GraduationProofUploadSerializer,
     ReferralRequestActionSerializer,
     ReferralRequestCreateSerializer,
@@ -535,3 +538,118 @@ class AlumniVerificationActionView(APIView):
             )
 
         return Response(AlumniProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+
+class AlumniVerificationView(APIView):
+    """IPC administrator endpoint to review graduation proof and verify/reject an alumnus.
+
+    Enforces that alumni cannot verify themselves, disallows transitions from non-pending,
+    requires graduation proof, persists verification metadata, and audits the decision.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="Verify or reject an alumnus profile",
+        description=(
+            "Allows authorized IPC administrators to review graduation proof and make a verification "
+            "decision for an alumnus profile. Updates verification status, dispatches an audit event, "
+            "and prevents unauthorized access."
+        ),
+        request=AlumniVerificationSerializer,
+        responses={
+            200: AlumniVerificationResponseSerializer,
+            400: {"description": "Invalid decision or disallowed status transition."},
+            401: {"description": "Unauthenticated request."},
+            403: {"description": "Forbidden: requester lacks IPC administrator role or self-verification."},
+            404: {"description": "Alumnus profile not found."},
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        if request.user.role != User.Role.IPC_ADMIN:
+            raise PermissionDenied("Only IPC administrators can review alumni profiles.")
+
+        lookup_id = kwargs.get("id") or kwargs.get("pk")
+        alumni = AlumniProfile.objects.select_related("user").filter(id=lookup_id).first()
+        if not alumni:
+            return Response(
+                {"detail": f"Alumnus profile with id {lookup_id} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Business rule: alumni cannot verify themselves
+        if alumni.user_id == request.user.id:
+            raise PermissionDenied("Alumni cannot verify themselves.")
+
+        # Disallow transition if already decided
+        if alumni.verification_status != AlumniProfile.VerificationStatus.PENDING:
+            return Response(
+                {
+                    "detail": (
+                        f"Disallowed status transition: alumnus profile for '{alumni.user.username}' "
+                        f"is already {alumni.verification_status}."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = AlumniVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_status = serializer.validated_data["status"]
+        rejection_reason = serializer.validated_data.get("rejection_reason", "")
+
+        now = timezone.now()
+        with transaction.atomic():
+            alumni.verification_status = new_status
+            alumni.verified_by = request.user if new_status == AlumniProfile.VerificationStatus.VERIFIED else None
+            alumni.verified_at = now if new_status == AlumniProfile.VerificationStatus.VERIFIED else None
+            alumni.reviewed_by = request.user
+            alumni.reviewed_at = now
+            alumni.verification_rejection_reason = rejection_reason if new_status == AlumniProfile.VerificationStatus.REJECTED else ""
+            alumni.save(
+                update_fields=[
+                    "verification_status",
+                    "verification_rejection_reason",
+                    "verified_by",
+                    "verified_at",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+
+            audit.log(
+                actor=request.user,
+                action=f"ALUMNI_VERIFICATION_{new_status}",
+                target=alumni,
+                context={
+                    "alumnus_user_id": alumni.user_id,
+                    "alumnus_username": alumni.user.username,
+                    "previous_status": AlumniProfile.VerificationStatus.PENDING,
+                    "new_status": new_status,
+                    "has_graduation_proof": bool(alumni.graduation_proof),
+                    "rejection_reason": rejection_reason,
+                },
+            )
+
+        proof_url = alumni.graduation_proof.url if (alumni.graduation_proof and hasattr(alumni.graduation_proof, 'url')) else None
+        response_data = {
+            "id": alumni.id,
+            "user_id": alumni.user_id,
+            "username": alumni.user.username,
+            "verification_status": alumni.verification_status,
+            "department": alumni.department,
+            "degree_programme": alumni.degree_programme,
+            "graduation_year": alumni.graduation_year,
+            "graduation_proof": proof_url,
+            "rejection_reason": alumni.verification_rejection_reason,
+            "verified_by": alumni.verified_by_id,
+            "verified_at": alumni.verified_at,
+            "updated_at": alumni.updated_at,
+        }
+
+        return Response(
+            AlumniVerificationResponseSerializer(response_data).data,
+            status=status.HTTP_200_OK,
+        )

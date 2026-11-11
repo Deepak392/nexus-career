@@ -81,6 +81,8 @@ class WorkflowAuditEvent(models.Model):
     class ObjectType(models.TextChoices):
         COMPANY = "COMPANY", "Company"
         OPPORTUNITY = "OPPORTUNITY", "Opportunity"
+        USER = "USER", "User"
+        ALUMNI = "ALUMNI", "Alumni"
 
     class Action(models.TextChoices):
         COMPANY_CREATED = "COMPANY_CREATED", "Company created"
@@ -92,6 +94,10 @@ class WorkflowAuditEvent(models.Model):
         OPPORTUNITY_REJECTED = "OPPORTUNITY_REJECTED", "Opportunity rejected"
         OPPORTUNITY_CLOSED = "OPPORTUNITY_CLOSED", "Opportunity closed"
         OPPORTUNITY_ARCHIVED = "OPPORTUNITY_ARCHIVED", "Opportunity archived"
+        USER_SUSPENDED = "USER_SUSPENDED", "User suspended"
+        USER_REACTIVATED = "USER_REACTIVATED", "User reactivated"
+        ALUMNI_VERIFIED = "ALUMNI_VERIFIED", "Alumni verified"
+        ALUMNI_REJECTED = "ALUMNI_REJECTED", "Alumni rejected"
 
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
