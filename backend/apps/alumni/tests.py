@@ -652,7 +652,7 @@ class AlumniGraduationVerificationTests(APITestCase):
         self.assertEqual(self.profile.reviewed_by, self.ipc)
         self.assertTrue(self.profile.verification_rejection_reason)
 
-    def test_student_cannot_access_another_students_referral(self):
+        def test_student_cannot_access_another_students_referral(self):
             referral = self.create_request()
 
             other_student = User.objects.create_user(
