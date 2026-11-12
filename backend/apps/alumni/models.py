@@ -31,6 +31,11 @@ class AlumniProfile(models.Model):
     designation = models.CharField(max_length=150, blank=True)
     industry = models.CharField(max_length=100, blank=True)
 
+    linkedin_url = models.URLField(
+        max_length=500,
+        blank=True,
+    )
+
     is_open_to_referrals = models.BooleanField(default=False)
 
     graduation_proof = models.FileField(
