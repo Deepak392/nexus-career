@@ -1,10 +1,13 @@
+
+from urllib.parse import urlparse
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.students.validators import validate_pdf_resume
+from apps.opportunities.models import Opportunity
 
 from .models import AlumniProfile, ReferralRequest, ReferralRequestHistory
-from apps.opportunities.models import Opportunity
 
 User = get_user_model()
 
@@ -28,6 +31,7 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             "current_company",
             "designation",
             "industry",
+            "linkedin_url",
             "is_open_to_referrals",
             "verification_status",
             "verification_rejection_reason",
@@ -62,6 +66,26 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_linkedin_url(self, value):
+        if not value:
+            return value
+
+        parsed = urlparse(value)
+        hostname = (parsed.hostname or "").lower()
+
+        if (
+            parsed.scheme != "https"
+            or not (
+                hostname == "linkedin.com"
+                or hostname.endswith(".linkedin.com")
+            )
+        ):
+            raise serializers.ValidationError(
+                "Enter a valid HTTPS LinkedIn profile URL."
+            )
+
+        return value
+
 
 class AlumniSearchSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
@@ -77,6 +101,7 @@ class AlumniSearchSerializer(serializers.ModelSerializer):
             "current_company",
             "designation",
             "industry",
+            "linkedin_url",
             "is_open_to_referrals",
         ]
 
@@ -154,7 +179,6 @@ class ReferralRequestSerializer(serializers.ModelSerializer):
             "history",
             "created_at",
             "updated_at",
-
         ]
         read_only_fields = fields
 
@@ -236,7 +260,6 @@ class ReferralRequestCreateSerializer(serializers.Serializer):
         return value.strip()
 
 
-
 class ReferralRequestActionSerializer(serializers.Serializer):
     note = serializers.CharField(
         max_length=1000,
@@ -266,7 +289,6 @@ class AlumniVerificationActionSerializer(serializers.Serializer):
 
     def validate_reason(self, value):
         return value.strip()
-
 
 
 class AlumniEngagementMetricsSerializer(serializers.Serializer):

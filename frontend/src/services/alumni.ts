@@ -1,3 +1,4 @@
+
 import {
   authenticatedBlobRequest,
   authenticatedRequest,
@@ -16,6 +17,7 @@ export interface AlumniProfile {
   current_company: string;
   designation: string;
   industry: string;
+  linkedin_url: string;
   is_open_to_referrals: boolean;
   verification_status: "PENDING" | "VERIFIED" | "REJECTED";
   verification_rejection_reason: string;
@@ -34,6 +36,7 @@ export interface AlumniSearchResult {
   current_company: string;
   designation: string;
   industry: string;
+  linkedin_url: string;
   is_open_to_referrals: boolean;
 }
 
@@ -88,7 +91,19 @@ export async function getAlumniProfile(): Promise<AlumniProfile> {
 }
 
 export async function updateAlumniProfile(
-  data: Partial<Pick<AlumniProfile, "department" | "degree_programme" | "graduation_year" | "current_company" | "designation" | "industry" | "is_open_to_referrals">>
+  data: Partial<
+    Pick<
+      AlumniProfile,
+      | "department"
+      | "degree_programme"
+      | "graduation_year"
+      | "current_company"
+      | "designation"
+      | "industry"
+      | "linkedin_url"
+      | "is_open_to_referrals"
+    >
+  >
 ): Promise<AlumniProfile> {
   return authenticatedRequest<AlumniProfile>("/alumni/profile/", {
     method: "PATCH",
@@ -108,12 +123,26 @@ export async function searchAlumni(
   filters: AlumniSearchFilters = {}
 ): Promise<{ count: number; results: AlumniSearchResult[] }> {
   const params = new URLSearchParams();
-  if (filters.company?.trim()) params.set("company", filters.company.trim());
-  if (filters.designation?.trim()) params.set("designation", filters.designation.trim());
-  if (filters.department?.trim()) params.set("department", filters.department.trim());
-  if (filters.available !== undefined) params.set("available", String(filters.available));
+
+  if (filters.company?.trim()) {
+    params.set("company", filters.company.trim());
+  }
+
+  if (filters.designation?.trim()) {
+    params.set("designation", filters.designation.trim());
+  }
+
+  if (filters.department?.trim()) {
+    params.set("department", filters.department.trim());
+  }
+
+  if (filters.available !== undefined) {
+    params.set("available", String(filters.available));
+  }
+
   const query = params.toString();
   const suffix = query ? `?${query}` : "";
+
   return authenticatedRequest<{ count: number; results: AlumniSearchResult[] }>(
     `/alumni/search/${suffix}`
   );
@@ -130,6 +159,7 @@ export async function createReferralRequest(
   data.set("opportunity_url", opportunityUrl);
   data.set("resume", resume);
   data.set("note", note);
+
   return authenticatedRequest<ReferralRequest>("/alumni/referral-requests/", {
     method: "POST",
     body: data,
@@ -154,10 +184,10 @@ export async function downloadReferralResume(id: number): Promise<Blob> {
   return authenticatedBlobRequest(`/alumni/referral-requests/${id}/resume/`);
 }
 
-
 export async function uploadGraduationProof(file: File): Promise<AlumniProfile> {
   const data = new FormData();
   data.set("graduation_proof", file);
+
   return authenticatedRequest<AlumniProfile>("/alumni/graduation-proof/", {
     method: "POST",
     body: data,
@@ -184,7 +214,10 @@ export async function verifyAlumniProfile(id: number): Promise<AlumniProfile> {
   });
 }
 
-export async function rejectAlumniProfile(id: number, reason: string): Promise<AlumniProfile> {
+export async function rejectAlumniProfile(
+  id: number,
+  reason: string
+): Promise<AlumniProfile> {
   return authenticatedRequest<AlumniProfile>(`/alumni/ipc/${id}/reject/`, {
     method: "POST",
     body: JSON.stringify({ reason }),
