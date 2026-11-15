@@ -7,8 +7,8 @@ The SRS (section 12.2) requires three separate environments. This page describes
 | Environment | Purpose | Data | Status |
 |---|---|---|---|
 | Development | Local development and integration | Synthetic test data only | In use (Docker Compose) |
-| Staging | Integration, QA and UAT | Synthetic or anonymized data | Not set up yet (needs hosting decision) |
-| Production | Actual deployment | Approved real user data | Not set up yet (needs hosting decision) |
+| Staging | Integration, QA and UAT | Synthetic or anonymized data | Not set up yet. Vercel preview deployments are a possible option. |
+| Production | Actual deployment | Approved real user data | Planned on Vercel (see Hosting). Not created yet. |
 
 **Rule:** real student resumes and personal information must not be copied into development or staging without an approved and secure process.
 
@@ -37,17 +37,51 @@ Settings are read from environment variables, so no code changes are needed betw
 
 The backend reads its database connection from `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST` and `PGPORT`. Docker Compose sets these.
 
-## Production requirements (proposed)
+## Hosting (Vercel)
 
-- `DJANGO_DEBUG=false`
-- `DJANGO_SECRET_KEY` set to a long random value stored outside the repository
-- `DJANGO_ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` set to the real domains
-- HTTPS and security headers enabled
-- A production web server instead of Django's `runserver`
-- Secrets stored in the hosting platform, never in Git
-- Daily automated database backups (SRS NFR-REL-05)
+The team decided to host on Vercel (free Hobby plan). Vercel builds from GitHub and does not use the Docker images. On the Hobby plan, only repositories in the owner's own GitHub account can be deployed, so the projects are created under the repository owner's Vercel account.
 
-The hosting platform has not been chosen yet. This list will be updated when it is.
+| Part | Planned Vercel project | Root directory | Notes |
+|---|---|---|---|
+| Frontend | `nexus-career` | `frontend` | Vite build. `frontend/vercel.json` rewrites all routes to `index.html`, so React routes work on refresh |
+| Backend | `nexus-career-api` | `backend` | Django runs as a serverless function. Vercel finds it through `WSGI_APPLICATION` |
+| Database | Hosted PostgreSQL (Neon) | n/a | Use the pooled connection string, because serverless functions open many short connections |
+
+### Hosted environment variables
+
+Set these in the Vercel dashboard. Never commit them.
+
+| Variable | Project | Value |
+|---|---|---|
+| `VITE_API_BASE_URL` | Frontend | `https://<backend domain>/api/v1` |
+| `DJANGO_DEBUG` | Backend | `false` |
+| `DJANGO_SECRET_KEY` | Backend | Long random value (required when debug is off) |
+| `DJANGO_ALLOWED_HOSTS` | Backend | The backend's domain |
+| `CORS_ALLOWED_ORIGINS` | Backend | `https://<frontend domain>` |
+| `STUDENT_EMAIL_DOMAIN` | Backend | `scds.saiuniversity.edu.in` |
+| `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT` | Backend | From the hosted database |
+| `PGSSLMODE` | Backend | `require` |
+
+### Migrations on the hosted database
+
+Run from a developer machine with the hosted database details. Never commit or share the values.
+
+```
+docker compose run --rm --no-deps -e PGHOST=<host> -e PGPORT=5432 -e PGUSER=<user> -e PGPASSWORD=<password> -e PGDATABASE=<db> -e PGSSLMODE=require backend python manage.py migrate
+```
+
+`make backup` and `make restore` only work on the local database container.
+
+### Known limits of serverless hosting
+
+- The server disk is temporary, so uploaded resumes must be stored in private object storage, not in a local folder (SRS NFR-SCL-04, NFR-SEC-07).
+- There are no persistent background processes.
+- Django admin and API documentation pages need static-file handling to look styled.
+
+### Rollback
+
+- Vercel keeps earlier deployments. If a release breaks the site, open the project's Deployments list in the dashboard and promote the last working deployment.
+- Database migrations are not rolled back by redeploying. Take a backup of the hosted database before applying a risky migration, and check the provider's own backup and restore options.
 
 ## Database backup and restore
 
@@ -82,7 +116,6 @@ CI uses fake credentials from `.env.example`.
 
 ## Still to define
 
-- Hosting platform for staging and production
-- Deployment pipeline (`cd.yml`) and rollback procedure
-- Health-check endpoint
-- Retention and deletion policy for backups (the SRS requires one)
+- Backup schedule and retention period for the hosted database (the SRS requires a retention policy)
+- Resume storage service
+- Health-check endpoint (SRS 12.3, point 6)
