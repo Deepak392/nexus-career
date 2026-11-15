@@ -46,21 +46,21 @@ case "$ACTION" in
 
   verify-compose)
     echo "=== Sprint 4 DevOps Test: Database Backup & Restore Validation ==="
-    BEFORE_USERS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM accounts_user;")
-    BEFORE_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities_opportunity;")
+    BEFORE_USERS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM users;")
+    BEFORE_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities;")
     echo "1. Initial State     -> Users: ${BEFORE_USERS} | Opportunities: ${BEFORE_OPPS}"
 
     bash "$0" backup-compose
 
-    echo "2. Simulating Data Loss (Truncating opportunities_opportunity CASCADE)..."
-    docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -q -c "TRUNCATE TABLE opportunities_opportunity CASCADE;"
-    WIPED_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities_opportunity;")
+    echo "2. Simulating Data Loss (Truncating opportunities CASCADE)..."
+    docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -q -c "TRUNCATE TABLE opportunities CASCADE;"
+    WIPED_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities;")
     echo "   After Data Loss   -> Opportunities: ${WIPED_OPPS}"
 
     bash "$0" restore-compose "${BACKUP_DIR}/latest.sql"
 
-    AFTER_USERS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM accounts_user;")
-    AFTER_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities_opportunity;")
+    AFTER_USERS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM users;")
+    AFTER_OPPS=$(docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM opportunities;")
     echo "3. Restored State    -> Users: ${AFTER_USERS} | Opportunities: ${AFTER_OPPS}"
 
     if [ "$BEFORE_USERS" = "$AFTER_USERS" ] && [ "$BEFORE_OPPS" = "$AFTER_OPPS" ]; then
