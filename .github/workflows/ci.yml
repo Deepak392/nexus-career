@@ -11,8 +11,9 @@ permissions:
 
 jobs:
   backend:
-      - name: Validate docker-compose.yml
-        run: docker compose config --quiet
+    name: Backend (Django + PostgreSQL)
+    runs-on: ubuntu-latest
+  
   
     steps:
       - name: Check out the code
@@ -20,6 +21,9 @@ jobs:
 
       - name: Create local CI environment
         run: cp .env.example .env
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
 
       - name: Build and start PostgreSQL and Django
         run: docker compose up -d --build --wait db backend
