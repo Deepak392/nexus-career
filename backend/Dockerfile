@@ -21,8 +21,8 @@ COPY --from=builder /install /usr/local
 
 # Fixed UID so Kubernetes can enforce runAsNonRoot
 RUN adduser --disabled-password --gecos "" --no-create-home --uid 1000 appuser \
-    && mkdir -p /app/private_media \
-    && chown -R appuser:appuser /app
+    && mkdir -p /var/lib/nexus/private_media /app/private_media \
+    && chown -R appuser:appuser /var/lib/nexus /app
 
 COPY --chown=appuser:appuser . .
 

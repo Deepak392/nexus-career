@@ -40,6 +40,7 @@ services:
       EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-10}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@nexus-career.local}
       PASSWORD_RESET_TIMEOUT: ${PASSWORD_RESET_TIMEOUT:-1800}
+      PRIVATE_MEDIA_ROOT: ${PRIVATE_MEDIA_ROOT:-/var/lib/nexus/private_media}
       PGDATABASE: nexus_career
       PGUSER: nexus_user
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
@@ -49,6 +50,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - private_media_data:/app/private_media
     depends_on:
       db:
         condition: service_healthy
@@ -76,3 +78,4 @@ services:
 
 volumes:
   nexus_postgres_data:
+  private_media_data:
