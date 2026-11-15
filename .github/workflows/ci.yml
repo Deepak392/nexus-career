@@ -11,8 +11,9 @@ permissions:
 
 jobs:
   backend:
-    name: Backend (Django + PostgreSQL)
-    runs-on: ubuntu-latest
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
+  
     steps:
       - name: Check out the code
         uses: actions/checkout@v7
