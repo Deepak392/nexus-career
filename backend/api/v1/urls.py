@@ -1,4 +1,5 @@
 from django.urls import include, path
+from api.v1.health import HealthView
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -12,6 +13,7 @@ from apps.accounts.views import (
 
 
 urlpatterns = [
+    path("health/", HealthView.as_view(), name="health"),
     path("auth/register/", RegisterView.as_view(), name="account-register"),
     path("auth/login/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
