@@ -56,9 +56,21 @@ If you change a model, create the migration and commit it in the same PR. CI fai
 
 ## 8. Working with CI
 
-- CI builds the Docker stack, runs Django checks, checks for missing migrations and runs tests.
-- Code Quality runs `ruff` on the backend and fails on real errors.
-- If a check fails, open the failed step in the PR's Checks tab, read the error and fix it before asking for a merge.
+
+Every pull request into `main` runs these checks. All of them must pass before you ask for a merge.
+
+| Check | What it does | If it fails |
+|---|---|---|
+| CI / Backend | Validates `docker-compose.yml`, starts PostgreSQL and Django in Docker, checks required packages, runs `manage.py check`, checks for missing migrations, applies migrations and runs the tests | Open the failed step. Common causes: a package missing from `requirements`, or a model change without a migration (run `make makemigrations`) |
+| CI / Frontend | `npm ci`, dependency audit report, lint and build | Run `npm run lint` and `npm run build` in `frontend/` and fix the errors |
+| Code Quality | Runs `ruff` on the backend and fails on real errors | Fix the reported lines |
+| Security | Scans the history for committed secrets (gitleaks) and reports vulnerable backend packages (pip-audit) | See the secrets note below |
+
+Good to know:
+
+- A new push to a pull request cancels the older CI run for that PR. Runs on `main` are never cancelled.
+- Dependabot opens weekly pull requests for outdated packages. Merge small patch updates when the checks are green. Do not merge major version upgrades close to a deadline without testing them.
+- If the secret scan finds a key or password, remove it from the code **and replace the key**. Anything committed once must be treated as leaked, even if you delete it later.
 
 ## 9. Useful commands
 
