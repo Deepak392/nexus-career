@@ -5,6 +5,8 @@ from apps.alumni.views import (
     PendingAlumniVerificationView,
 )
 from apps.recruiters.admin_views import (
+    ActivityReportExportView,
+    ActivityReportListView,
     AdminDashboardMetricsView,
     AuditLogListView,
     OpportunityApproveView,
@@ -38,4 +40,9 @@ urlpatterns = [
     # R5: Admin dashboard metrics
     path("dashboard/metrics/", AdminDashboardMetricsView.as_view(), name="admin-dashboard-metrics"),
     path("metrics/", AdminDashboardMetricsView.as_view(), name="admin-metrics"),
+
+    # R6: Activity reports and CSV export
+    path("reports/", ActivityReportListView.as_view(), name="admin-reports-list"),
+    path("reports/activity/", ActivityReportListView.as_view(), name="admin-reports-activity"),
+    path("reports/export/", ActivityReportExportView.as_view(), name="admin-reports-export"),
 ]

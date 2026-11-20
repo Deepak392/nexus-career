@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .admin_views import (
+    ActivityReportExportView,
+    ActivityReportListView,
     AdminDashboardMetricsView,
     AuditLogListView,
     CompanyRejectView,
@@ -24,4 +26,6 @@ urlpatterns = [
     path("users/<int:pk>/reactivate/", UserReactivateView.as_view(), name="ipc-user-reactivate"),
     path("audit-logs/", AuditLogListView.as_view(), name="ipc-audit-logs"),
     path("dashboard/metrics/", AdminDashboardMetricsView.as_view(), name="ipc-dashboard-metrics"),
+    path("reports/", ActivityReportListView.as_view(), name="ipc-reports"),
+    path("reports/export/", ActivityReportExportView.as_view(), name="ipc-reports-export"),
 ]
