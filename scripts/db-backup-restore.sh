@@ -29,19 +29,33 @@ case "$ACTION" in
     echo "[Restore] Complete!"
     ;;
 
-  backup-k8s)
-    OUT_FILE="${BACKUP_DIR}/nexus_k8s_${TIMESTAMP}.sql"
-    echo "[K8s Backup] Dumping StatefulSet db-0 database '${DB_NAME}' to ${OUT_FILE}..."
-    kubectl -n nexus exec db-0 -- sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' > "$OUT_FILE"
-    cp "$OUT_FILE" "${BACKUP_DIR}/latest_k8s.sql"
-    echo "[K8s Backup] Complete! Saved to ${OUT_FILE}."
+  backup-hosted)
+    OUT_FILE="${BACKUP_DIR}/nexus_hosted_${TIMESTAMP}.sql"
+    echo "[Hosted Backup] Dumping hosted PostgreSQL database '${DB_NAME}' on ${PGHOST:-localhost} to ${OUT_FILE}..."
+    docker compose run --rm --no-deps -T \
+      -e PGHOST="${PGHOST:?Set PGHOST for hosted backup}" \
+      -e PGPORT="${PGPORT:-5432}" \
+      -e PGUSER="$DB_USER" \
+      -e PGPASSWORD="${PGPASSWORD:?Set PGPASSWORD for hosted backup}" \
+      -e PGDATABASE="$DB_NAME" \
+      -e PGSSLMODE="${PGSSLMODE:-require}" \
+      db pg_dump -h "$PGHOST" -p "${PGPORT:-5432}" -U "$DB_USER" -d "$DB_NAME" --clean --if-exists > "$OUT_FILE"
+    cp "$OUT_FILE" "${BACKUP_DIR}/latest_hosted.sql"
+    echo "[Hosted Backup] Complete! Saved to ${OUT_FILE}."
     ;;
 
-  restore-k8s)
-    IN_FILE="${2:-${BACKUP_DIR}/latest_k8s.sql}"
-    echo "[K8s Restore] Restoring StatefulSet db-0 from ${IN_FILE}..."
-    kubectl -n nexus exec -i db-0 -- sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q' < "$IN_FILE"
-    echo "[K8s Restore] Complete!"
+  restore-hosted)
+    IN_FILE="${2:-${BACKUP_DIR}/latest_hosted.sql}"
+    echo "[Hosted Restore] Restoring hosted PostgreSQL database '${DB_NAME}' on ${PGHOST:-localhost} from ${IN_FILE}..."
+    docker compose run --rm --no-deps -T \
+      -e PGHOST="${PGHOST:?Set PGHOST for hosted restore}" \
+      -e PGPORT="${PGPORT:-5432}" \
+      -e PGUSER="$DB_USER" \
+      -e PGPASSWORD="${PGPASSWORD:?Set PGPASSWORD for hosted restore}" \
+      -e PGDATABASE="$DB_NAME" \
+      -e PGSSLMODE="${PGSSLMODE:-require}" \
+      db psql -h "$PGHOST" -p "${PGPORT:-5432}" -U "$DB_USER" -d "$DB_NAME" -q < "$IN_FILE"
+    echo "[Hosted Restore] Complete!"
     ;;
 
   verify-compose)
@@ -72,8 +86,7 @@ case "$ACTION" in
     ;;
 
   *)
-    echo "Usage: $0 {backup-compose|restore-compose|backup-k8s|restore-k8s|verify-compose}"
+    echo "Usage: $0 {backup-compose|restore-compose|backup-hosted|restore-hosted|verify-compose}"
     exit 1
     ;;
 esac
-

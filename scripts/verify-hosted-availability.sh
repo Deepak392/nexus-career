@@ -8,10 +8,10 @@ echo "=================================================================="
 echo " Nexus Career — Hosted Environment Availability Check (Sprint 4)"
 echo "=================================================================="
 
-echo "[1/4] Probing Backend Health & Latency (${BACKEND_URL}/health/)..."
+echo "[1/4] Probing Backend API Health & Latency (${BACKEND_URL}/api/v1/health/)..."
 for i in {1..5}; do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/health/")
-  TIME=$(curl -s -o /dev/null -w "%{time_total}s" "${BACKEND_URL}/health/")
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/api/v1/health/")
+  TIME=$(curl -s -o /dev/null -w "%{time_total}s" "${BACKEND_URL}/api/v1/health/")
   echo "  Probe #$i: HTTP ${CODE} (${TIME})"
   [ "$CODE" = "200" ]
 done
@@ -31,7 +31,7 @@ echo "  OpenAPI Schema    : HTTP ${SCHEMA_CODE} (${USERS} seeded user accounts)"
 [ "$API_CODE" = "200" ]
 
 echo "[4/4] Auditing Production Security Headers..."
-curl -sI "${BACKEND_URL}/health/" | grep -iE "x-frame-options|x-content-type-options|referrer-policy|cross-origin"
+curl -sI "${BACKEND_URL}/api/v1/health/" | grep -iE "x-frame-options|x-content-type-options|referrer-policy|cross-origin"
 
 echo "=================================================================="
 echo " SUCCESS: Hosted environment is stable and ready for user research"
