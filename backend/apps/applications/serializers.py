@@ -44,3 +44,40 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
 class ApplicationSubmissionSerializer(serializers.Serializer):
     opportunity_id = serializers.IntegerField(min_value=1)
+
+
+class ApplicationStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Application.Status.choices)
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+
+
+class RecruiterApplicationSerializer(serializers.ModelSerializer):
+    student_id = serializers.IntegerField(source="student.id", read_only=True)
+    student_username = serializers.CharField(source="student.username", read_only=True)
+    student_email = serializers.EmailField(source="student.email", read_only=True)
+    opportunity_id = serializers.IntegerField(source="opportunity.id", read_only=True)
+    opportunity_title = serializers.CharField(source="opportunity.title", read_only=True)
+    status_history = ApplicationStatusHistorySerializer(many=True, read_only=True)
+    has_resume = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Application
+        fields = [
+            "id",
+            "student_id",
+            "student_username",
+            "student_email",
+            "opportunity_id",
+            "opportunity_title",
+            "status",
+            "has_resume",
+            "eligibility_snapshot",
+            "submitted_at",
+            "updated_at",
+            "status_history",
+        ]
+        read_only_fields = fields
+
+    def get_has_resume(self, obj) -> bool:
+        return bool(obj.resume)
+

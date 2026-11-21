@@ -1,3 +1,4 @@
+import tempfile
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import override_settings
@@ -7,6 +8,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.alumni.models import AlumniProfile, ReferralRequest, ReferralRequestHistory
 from apps.notifications.models import Notification
+
+ALUMNI_TEST_MEDIA_ROOT = tempfile.mkdtemp(prefix="nexus-career-alumni-tests-")
+ALUMNI_VERIFY_TEST_MEDIA_ROOT = tempfile.mkdtemp(prefix="nexus-career-alumni-verification-tests-")
 
 
 User = get_user_model()
@@ -156,7 +160,7 @@ class AlumniProfileAPITests(APITestCase):
         self.assertEqual(response.data["count"], 0)
 
 
-@override_settings(MEDIA_ROOT="/tmp/nexus-career-alumni-tests")
+@override_settings(MEDIA_ROOT=ALUMNI_TEST_MEDIA_ROOT)
 class AlumniReferralWorkflowTests(APITestCase):
     def setUp(self):
         self.student = User.objects.create_user(
@@ -396,7 +400,7 @@ class AlumniReferralWorkflowTests(APITestCase):
 
 
 
-@override_settings(MEDIA_ROOT="/tmp/nexus-career-alumni-verification-tests")
+@override_settings(MEDIA_ROOT=ALUMNI_VERIFY_TEST_MEDIA_ROOT)
 class AlumniGraduationVerificationTests(APITestCase):
     def setUp(self):
         self.alumni = User.objects.create_user(

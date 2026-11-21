@@ -262,3 +262,26 @@ class RecruiterOpportunityViewSet(viewsets.ModelViewSet):
             action=WorkflowAuditEvent.Action.OPPORTUNITY_ARCHIVED,
         )
         return Response(self.get_serializer(opportunity).data)
+
+    @extend_schema(
+        summary="List applications for opportunity",
+        description="List all student applications submitted to this opportunity. Scoped to recruiter's company.",
+    )
+    @action(detail=True, methods=["get"])
+    def applications(self, request, pk=None):
+        """List student applications submitted to this opportunity."""
+        opportunity = self.get_object()
+        from apps.applications.serializers import RecruiterApplicationSerializer
+
+        apps_qs = (
+            opportunity.applications.all()
+            .select_related("student", "opportunity", "opportunity__company")
+            .prefetch_related("status_history", "status_history__changed_by")
+            .order_by("-submitted_at")
+        )
+        page = self.paginate_queryset(apps_qs)
+        if page is not None:
+            serializer = RecruiterApplicationSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = RecruiterApplicationSerializer(apps_qs, many=True)
+        return Response(serializer.data)

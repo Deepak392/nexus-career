@@ -146,3 +146,45 @@ class OpportunityEligibilityView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class OpportunityApplicantsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="List applicants for an opportunity",
+        description="Retrieve all student applications for an opportunity. Scoped to the opportunity's recruiter and IPC admins.",
+        responses={
+            200: inline_serializer(
+                name="OpportunityApplicantsResponse",
+                fields={
+                    "count": serializers.IntegerField(),
+                    "results": serializers.ListField(child=serializers.DictField()),
+                },
+            )
+        },
+    )
+    def get(self, request, pk):
+        opportunity = get_object_or_404(Opportunity.objects.select_related("company"), pk=pk)
+        user = request.user
+        role = getattr(user, "role", "")
+        is_ipc_admin = role in ("IPC_ADMIN", "SYSTEM_ADMIN") or user.is_staff or user.is_superuser
+        is_recruiter = role == "RECRUITER"
+
+        if is_recruiter:
+            profile = getattr(user, "recruiter_profile", None)
+            if not profile or profile.company_id != opportunity.company_id:
+                raise permissions.exceptions.PermissionDenied("You can only view applicants for your own company.")
+        elif not is_ipc_admin:
+            raise permissions.exceptions.PermissionDenied("Only recruiters and administrators can view applicants.")
+
+        from apps.applications.serializers import RecruiterApplicationSerializer
+
+        apps_qs = (
+            opportunity.applications.all()
+            .select_related("student", "opportunity", "opportunity__company")
+            .prefetch_related("status_history", "status_history__changed_by")
+            .order_by("-submitted_at")
+        )
+        serializer = RecruiterApplicationSerializer(apps_qs, many=True)
+        return Response({"count": apps_qs.count(), "results": serializer.data}, status=status.HTTP_200_OK)
