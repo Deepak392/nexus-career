@@ -1,4 +1,5 @@
 from django.urls import include, path
+from api.v1.health import HealthView
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -12,6 +13,9 @@ from apps.accounts.views import (
 
 
 urlpatterns = [
+    # Health check route (Isha F3)
+    path("health/", HealthView.as_view(), name="health"),
+
     # Authentication routes (Deepak)
     path("auth/register/", RegisterView.as_view(), name="account-register"),
     path("auth/login/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
