@@ -157,17 +157,17 @@ class TestAdminDashboardMetrics:
     ):
         """M07: Only active users with role=STUDENT are counted in the students metric."""
         # 2 active students
-        role_user_factory(role=User.Role.STUDENT, username="student_active_1")
-        role_user_factory(role=User.Role.STUDENT, username="student_active_2")
+        role_user_factory(role="Student", username="student_active_1")
+        role_user_factory(role="Student", username="student_active_2")
 
         # 1 suspended student (is_active=False)
         role_user_factory(
-            role=User.Role.STUDENT, username="student_suspended", is_active=False
+            role="Student", username="student_suspended", is_active=False
         )
 
         # 1 recruiter, 1 alumni (should NOT be counted as students)
-        role_user_factory(role=User.Role.RECRUITER, username="recruiter_x")
-        role_user_factory(role=User.Role.ALUMNI, username="alumni_x")
+        role_user_factory(role="Recruiter", username="recruiter_x")
+        role_user_factory(role="Alumni", username="alumni_x")
 
         api_client.credentials(**jwt_auth_headers(ipc_admin_user))
         response = api_client.get(reverse("admin-dashboard-metrics"))
@@ -267,8 +267,8 @@ class TestAdminDashboardMetrics:
             application_deadline=now + timezone.timedelta(days=15),
         )
 
-        s1 = role_user_factory(role=User.Role.STUDENT, username="applicant_1")
-        s2 = role_user_factory(role=User.Role.STUDENT, username="applicant_2")
+        s1 = role_user_factory(role="Student", username="applicant_1")
+        s2 = role_user_factory(role="Student", username="applicant_2")
 
         Application.objects.create(
             student=s1,
