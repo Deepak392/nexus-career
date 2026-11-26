@@ -46,4 +46,4 @@ Review date: 25 November 2026. Reviewer: Roopa (DevOps and security). Scope: res
 
 ## Tests
 
-Authorization tests (to be added): another student gets 404 on a referral resume, an unauthenticated request gets 401, a recruiter gets 403.
+Authorization tests are in `backend/apps/alumni/test_private_file_access.py`: unauthenticated, other student, other alumnus, recruiter, IPC admin and system admin are denied on referral resumes, and only the two participants can download them. Graduation proofs are limited to the IPC admin. The existing team tests (`test_resume_download_is_restricted_to_request_participants`, `test_only_ipc_can_access_graduation_proof_and_verify_profile`, `test_resume_uploads.py`) cover upload validation and part of the access rules.
