@@ -108,11 +108,20 @@ Never run the wipe command outside your own laptop.
 
 On every pull request into `main`, GitHub Actions runs:
 
-- **Backend job:** starts PostgreSQL and Django in Docker, checks dependencies, runs `manage.py check`, checks for missing migrations, applies migrations and runs the tests.
+- **Backend job:** validates `docker-compose.yml`, starts PostgreSQL and Django in Docker, checks dependencies, runs `manage.py check`, checks for missing migrations, applies migrations and runs the tests.
 - **Frontend job:** `npm ci`, a dependency audit report, lint and build.
 - **Code Quality:** `ruff` on the backend for real errors.
+- **Security:** a gitleaks secret scan and a report-only `pip-audit` of the backend packages. Also runs weekly.
+
+A new push to a pull request cancels the older run for that PR. Runs on `main` are never cancelled.
+
+Dependabot opens weekly pull requests for outdated backend, frontend, GitHub Actions and Docker dependencies. Merge small updates when the checks are green. Major version upgrades (Django, Python, Node) need testing first, so ignore them close to a deadline.
 
 CI uses fake credentials from `.env.example`.
+
+## Health check
+
+`GET /api/v1/health/` returns `{"status": "ok"}` with a 200. It needs no login and makes no database call, so it only shows that the app is running. Use it for uptime checks.
 
 ## Still to define
 
