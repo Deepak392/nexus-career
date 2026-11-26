@@ -26,3 +26,7 @@ backend/private_media/
 # IDE settings
 .vscode/
 backups/
+# Local packages and SQLite
+backend/.packages/
+*.sqlite3
+backend/db.sqlite3

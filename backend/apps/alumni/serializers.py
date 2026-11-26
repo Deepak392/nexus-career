@@ -236,3 +236,38 @@ class AlumniEngagementMetricsSerializer(serializers.Serializer):
     verification_status = serializers.ChoiceField(
         choices=AlumniProfile.VerificationStatus.choices
     )
+
+
+class AlumniVerificationSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=["VERIFIED", "REJECTED"],
+        error_messages={"invalid_choice": "Status must be either 'VERIFIED' or 'REJECTED'."},
+    )
+    rejection_reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=1000,
+        trim_whitespace=True,
+    )
+
+    def validate(self, attrs):
+        if attrs.get("status") == "REJECTED" and not attrs.get("rejection_reason"):
+            raise serializers.ValidationError(
+                {"rejection_reason": "A valid rejection reason is required when rejecting an alumnus."}
+            )
+        return attrs
+
+
+class AlumniVerificationResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    verification_status = serializers.CharField()
+    department = serializers.CharField()
+    degree_programme = serializers.CharField()
+    graduation_year = serializers.IntegerField()
+    graduation_proof = serializers.CharField(allow_null=True)
+    rejection_reason = serializers.CharField(allow_blank=True)
+    verified_by = serializers.IntegerField(allow_null=True)
+    verified_at = serializers.DateTimeField(allow_null=True)
+    updated_at = serializers.DateTimeField()
