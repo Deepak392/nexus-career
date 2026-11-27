@@ -128,8 +128,21 @@ CI uses fake credentials from `.env.example`.
 
 `GET /api/v1/health/` returns `{"status": "ok"}` with a 200. It needs no login and makes no database call, so it only shows that the app is running. Use it for uptime checks.
 
+
+## Logging
+
+- The backend has no custom logging configuration. Django's defaults apply, so errors go to the console, and on Vercel they appear in the project's function logs.
+- With `DJANGO_DEBUG=false`, users see a generic error page and never a stack trace (NFR-REL-02).
+- Rules: never log passwords, tokens, reset links or resume text (NFR-SEC-10). When a password reset email fails, only the user id is logged (checked in the security review).
+- CI prints the service logs when the backend job fails.
+
+## Production server note
+
+The Docker image runs Django's development server (`runserver`), so it is for local development and CI only. On Vercel the backend runs in Vercel's own runtime and this image is not used. If the hosting changes to a plain server, a production web server (for example gunicorn) must be added first.
+
 ## Still to define
 
 - Backup schedule and retention period for the hosted database (the SRS requires a retention policy)
 - Resume storage service
 - Health-check endpoint (SRS 12.3, point 6)
+- Structured logging and monitoring (SRS 12.3, point 7)
