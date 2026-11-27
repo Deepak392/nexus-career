@@ -1,3 +1,5 @@
+import tempfile
+from pathlib import Path
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import override_settings
@@ -156,7 +158,7 @@ class AlumniProfileAPITests(APITestCase):
         self.assertEqual(response.data["count"], 0)
 
 
-@override_settings(MEDIA_ROOT="/tmp/nexus-career-alumni-tests")
+@override_settings(MEDIA_ROOT=str(Path(tempfile.gettempdir()) / "nexus-career-alumni-tests"))
 class AlumniReferralWorkflowTests(APITestCase):
     def setUp(self):
         self.student = User.objects.create_user(
@@ -396,7 +398,7 @@ class AlumniReferralWorkflowTests(APITestCase):
 
 
 
-@override_settings(MEDIA_ROOT="/tmp/nexus-career-alumni-verification-tests")
+@override_settings(MEDIA_ROOT=str(Path(tempfile.gettempdir()) / "nexus-career-alumni-verification-tests"))
 class AlumniGraduationVerificationTests(APITestCase):
     def setUp(self):
         self.alumni = User.objects.create_user(
