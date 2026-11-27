@@ -61,6 +61,11 @@ Set these in the Vercel dashboard. Never commit them.
 | `STUDENT_EMAIL_DOMAIN` | Backend | `scds.saiuniversity.edu.in` |
 | `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT` | Backend | From the hosted database |
 | `PGSSLMODE` | Backend | `require` |
+| `EMAIL_HOST` | Backend | SMTP server of the chosen mail provider |
+| `EMAIL_PORT` | Backend | `587` |
+| `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | Backend | SMTP login from the provider |
+| `EMAIL_USE_TLS` | Backend | `true` |
+| `DEFAULT_FROM_EMAIL` | Backend | The sender address shown on password reset emails |
 
 ### Migrations on the hosted database
 
