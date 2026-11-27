@@ -535,3 +535,112 @@ class AlumniVerificationActionView(APIView):
             )
 
         return Response(AlumniProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+from drf_spectacular.utils import OpenApiResponse
+from api.core.audit import log_verification_audit
+from api.core.permissions import IsIPCAdmin
+from .serializers import AlumniVerificationSerializer, AlumniVerificationResponseSerializer
+
+
+class AlumniVerificationView(APIView):
+    """IPC administrator endpoint to review graduation proof and verify/reject an alumnus."""
+
+    permission_classes = [IsIPCAdmin]
+
+    @extend_schema(
+        summary="Verify or reject an alumnus profile",
+        description=(
+            "Allows authorized IPC administrators to review graduation proof and make a verification "
+            "decision for an alumnus profile. Updates verification status, dispatches an audit event, "
+            "and prevents unauthorized access."
+        ),
+        request=AlumniVerificationSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=AlumniVerificationResponseSerializer,
+                description="Alumnus verification decision successfully recorded.",
+            ),
+            400: OpenApiResponse(description="Invalid decision or disallowed status transition."),
+            401: OpenApiResponse(description="Unauthenticated request."),
+            403: OpenApiResponse(description="Forbidden: requester lacks IPC administrator role."),
+            404: OpenApiResponse(description="Alumnus profile not found."),
+        },
+    )
+    def post(self, request, id):
+        alumni = AlumniProfile.objects.select_related("user").filter(id=id).first()
+        if not alumni:
+            return Response(
+                {"detail": f"Alumnus profile with id {id} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if alumni.verification_status != AlumniProfile.VerificationStatus.PENDING:
+            return Response(
+                {
+                    "detail": (
+                        f"Disallowed status transition: alumnus profile for '{alumni.user.username}' "
+                        f"is already {alumni.verification_status}."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = AlumniVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_status = serializer.validated_data["status"]
+        rejection_reason = serializer.validated_data.get("rejection_reason", "")
+
+        with transaction.atomic():
+            now = timezone.now()
+            alumni.verification_status = new_status
+            alumni.verified_by = request.user
+            alumni.verified_at = now
+            alumni.verification_rejection_reason = rejection_reason
+            alumni.updated_at = now
+            alumni.save(
+                update_fields=[
+                    "verification_status",
+                    "verified_by",
+                    "verified_at",
+                    "verification_rejection_reason",
+                    "updated_at",
+                ]
+            )
+
+            log_verification_audit(
+                actor=request.user,
+                action=f"ALUMNI_VERIFICATION_{new_status}",
+                target_type="AlumniProfile",
+                target_id=alumni.id,
+                details={
+                    "alumnus_user_id": alumni.user_id,
+                    "alumnus_username": alumni.user.username,
+                    "previous_status": AlumniProfile.VerificationStatus.PENDING,
+                    "new_status": new_status,
+                    "has_graduation_proof": bool(alumni.graduation_proof),
+                    "rejection_reason": rejection_reason,
+                },
+            )
+
+        response_data = {
+            "id": alumni.id,
+            "user_id": alumni.user_id,
+            "username": alumni.user.username,
+            "verification_status": alumni.verification_status,
+            "department": alumni.department,
+            "degree_programme": alumni.degree_programme,
+            "graduation_year": alumni.graduation_year,
+            "graduation_proof": (
+                alumni.graduation_proof.url if alumni.graduation_proof else None
+            ),
+            "rejection_reason": rejection_reason,
+            "verified_by": alumni.verified_by_id,
+            "verified_at": alumni.verified_at,
+            "updated_at": alumni.updated_at,
+        }
+
+        return Response(
+            AlumniVerificationResponseSerializer(response_data).data,
+            status=status.HTTP_200_OK,
+        )

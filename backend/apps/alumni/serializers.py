@@ -236,3 +236,44 @@ class AlumniEngagementMetricsSerializer(serializers.Serializer):
     verification_status = serializers.ChoiceField(
         choices=AlumniProfile.VerificationStatus.choices
     )
+
+
+class AlumniVerificationSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=[AlumniProfile.VerificationStatus.VERIFIED, AlumniProfile.VerificationStatus.REJECTED],
+        required=True,
+        help_text="Verification decision: VERIFIED or REJECTED.",
+    )
+    rejection_reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Mandatory explanation if status is REJECTED.",
+    )
+
+    def validate(self, attrs):
+        status_val = attrs.get("status")
+        reason = attrs.get("rejection_reason", "").strip()
+
+        if status_val == AlumniProfile.VerificationStatus.REJECTED and not reason:
+            raise serializers.ValidationError(
+                {"rejection_reason": "A rejection reason is required when rejecting an alumnus profile."}
+            )
+
+        attrs["rejection_reason"] = reason
+        return attrs
+
+
+class AlumniVerificationResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text="Identifier of the alumni profile.")
+    user_id = serializers.IntegerField(help_text="User ID of the alumnus.")
+    username = serializers.CharField(help_text="Username of the alumnus.")
+    verification_status = serializers.CharField(help_text="Updated verification status.")
+    department = serializers.CharField(help_text="Department.")
+    degree_programme = serializers.CharField(help_text="Degree programme.")
+    graduation_year = serializers.IntegerField(help_text="Graduation year.")
+    graduation_proof = serializers.CharField(allow_null=True, required=False, help_text="Evidence document URL or path.")
+    rejection_reason = serializers.CharField(required=False, allow_blank=True)
+    verified_by = serializers.IntegerField(allow_null=True, required=False)
+    verified_at = serializers.DateTimeField(allow_null=True, required=False)
+    updated_at = serializers.DateTimeField(help_text="Timestamp of update.")

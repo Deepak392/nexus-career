@@ -1,3 +1,5 @@
+from apps.alumni.views import AlumniVerificationView
+from apps.recruiters.views import RecruiterVerificationView
 from django.urls import include, path
 from api.v1.health import HealthView
 
@@ -36,4 +38,15 @@ urlpatterns = [
     path("opportunities/", include("apps.opportunities.urls")),
     path("recruiters/", include("apps.recruiters.urls")),
     path("ipc/", include("apps.recruiters.ipc_urls")),
+
+    path(
+        "admin/recruiters/<int:id>/verify/",
+        RecruiterVerificationView.as_view(),
+        name="admin-recruiter-verify",
+    ),
+    path(
+        "admin/alumni/<int:id>/verify/",
+        AlumniVerificationView.as_view(),
+        name="admin-alumni-verify",
+    ),
 ]
