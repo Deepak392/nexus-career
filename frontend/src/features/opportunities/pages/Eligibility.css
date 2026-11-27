@@ -1,0 +1,41 @@
+.eligibility-result {
+  margin: 18px 0 22px;
+  padding: 18px;
+  border: 1px solid var(--border, #e6e8ef);
+  border-radius: 12px;
+  background: var(--surface-alt, #fafbff);
+  color: var(--text, #1f2430);
+}
+.eligibility-result.eligible { border-color: #7ac39a; background: var(--success-bg, #e7f6ec); }
+.eligibility-result.ineligible { border-color: #e5a1a7; background: var(--danger-bg, #fdeaea); }
+.eligibility-result.incomplete { border-color: #e0bd73; background: var(--warning-bg, #fff1d6); }
+.eligibility-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.eligibility-eyebrow { margin: 0 0 5px; color: var(--text-muted, #666d7d); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.eligibility-heading h2 { margin: 0; color: var(--text-strong, #171a2b); font-size: 18px; }
+.eligibility-status { padding: 5px 9px; border-radius: 999px; background: var(--surface, #fff); color: var(--text, #1f2430); font-size: 10px; font-weight: 800; white-space: nowrap; }
+.eligibility-summary { margin: 10px 0 0; color: var(--text, #1f2430); font-size: 13px; line-height: 1.5; }
+.eligibility-check-list { display: grid; gap: 10px; margin-top: 14px; }
+.eligibility-check { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border, #e6e8ef); border-radius: 9px; background: var(--surface, #fff); }
+.eligibility-check-mark { display: inline-grid; flex: 0 0 22px; width: 22px; height: 22px; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 800; }
+.eligibility-check-mark.met { background: var(--success-bg, #e7f6ec); color: var(--success-text, #145a2b); }
+.eligibility-check-mark.not_met { background: var(--danger-bg, #fdeaea); color: var(--danger-text, #8a1c1c); }
+.eligibility-check-mark.missing { background: var(--warning-bg, #fff1d6); color: var(--warning-text, #8a5a00); }
+.eligibility-check strong { display: block; color: var(--text-strong, #171a2b); font-size: 13px; }
+.eligibility-check p { margin: 3px 0; color: var(--text, #1f2430); font-size: 12px; line-height: 1.45; }
+.eligibility-check small { color: var(--text-muted, #666d7d); font-size: 11px; }
+.eligibility-missing { margin: 12px 0 0; color: var(--text, #1f2430); font-size: 13px; font-weight: 600; }
+.eligibility-profile-link { display: inline-block; margin-top: 12px; color: var(--accent, #4338ca); font-size: 13px; font-weight: 650; }
+.external-application-note { max-width: 680px; margin-top: 12px; font-size: 12px; }
+:root[data-theme="dark"] .eligibility-result.eligible { border-color: #286a4a; }
+:root[data-theme="dark"] .eligibility-result.ineligible { border-color: #7b3e48; }
+:root[data-theme="dark"] .eligibility-result.incomplete { border-color: #795c2e; }
+:root[data-theme="dark"] .eligibility-heading h2,
+:root[data-theme="dark"] .eligibility-check strong { color: var(--text-strong); }
+:root[data-theme="dark"] .eligibility-summary,
+:root[data-theme="dark"] .eligibility-check p,
+:root[data-theme="dark"] .eligibility-missing { color: var(--text); }
+:root[data-theme="dark"] .eligibility-status,
+:root[data-theme="dark"] .eligibility-check { background: var(--surface); border-color: var(--border); }
+@media (max-width: 560px) {
+  .eligibility-heading { flex-direction: column; }
+}

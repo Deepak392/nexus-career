@@ -2,7 +2,7 @@ export default function SimplePage({ title, text }: { title: string; text: strin
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "60px 24px" }}>
       <h1>{title}</h1>
-      <p style={{ color: "#666" }}>{text}</p>
+      <p style={{ color: "var(--text-muted)" }}>{text}</p>
     </div>
   );
 }

@@ -1,15 +1,10 @@
-
+from apps.accounts.models import User
 from itertools import count
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from api.core.audit import clear_audit_logs, get_audit_logs
-from apps.alumni.models import AlumniProfile
-from apps.recruiters.models import Company, RecruiterProfile
 
 
 ROLE_NAMES = (
@@ -38,7 +33,7 @@ def user_factory(db):
         **fields,
     ):
         username = username or f"test-user-{next(usernames)}"
-        fields.setdefault("email", f"{username}@scds.saiuniversity.edu.in")
+        fields.setdefault("email", f"{username}@example.test")
         fields.setdefault("role", User.Role.STUDENT)
 
         return User.objects.create_user(
@@ -67,12 +62,10 @@ def role_user_factory(user_factory):
             raise ValueError(f"Unknown test role: {role}")
 
         fields.setdefault("role", role_values[role])
-
         user = user_factory(**fields)
 
         group, _ = Group.objects.get_or_create(name=role)
         user.groups.add(group)
-
         return user
 
     return make_role_user
@@ -102,63 +95,72 @@ def alumni_user(role_user_factory):
 def system_admin_user(role_user_factory):
     return role_user_factory("System Admin")
 
+from rest_framework_simplejwt.tokens import RefreshToken
+from api.core.audit import clear_audit_logs
+from apps.recruiters.models import Company, RecruiterProfile
+from apps.alumni.models import AlumniProfile
+
 
 @pytest.fixture
 def jwt_auth_headers():
-    """Generates real SimpleJWT Bearer authentication headers for a given user."""
     def _headers(user):
         refresh = RefreshToken.for_user(user)
-        return {"HTTP_AUTHORIZATION": f"Bearer {str(refresh.access_token)}"}
+        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
     return _headers
 
 
 @pytest.fixture(autouse=True)
 def reset_audit_log_store():
-    """Cleans in-memory audit store before and after each test."""
     clear_audit_logs()
     yield
     clear_audit_logs()
 
 
 @pytest.fixture
-def company_factory(db):
-    companies = count(1)
-
-    def _make_company(**fields):
-        num = next(companies)
-        fields.setdefault("name", f"Tech Innovations {num}")
-        fields.setdefault("industry", "Information Technology")
-        fields.setdefault("contact_email", f"contact{num}@techinnovations.com")
-        fields.setdefault("verification_status", Company.VerificationStatus.PENDING)
-        return Company.objects.create(**fields)
-
-    return _make_company
+def company_factory(db, user_factory):
+    def _create_company(name="Acme Corp", recruiter=None, **kwargs):
+        recruiter = recruiter or user_factory(role=User.Role.RECRUITER)
+        company = Company.objects.create(
+            name=name,
+            website=kwargs.get("website", "https://acme.example.com"),
+            industry=kwargs.get("industry", "Technology"),
+            contact_email=kwargs.get("contact_email", "jobs@acme.example.com"),
+            contact_phone=kwargs.get("contact_phone", "+1234567890"),
+            description=kwargs.get("description", "A leading software company."),
+            verification_status=kwargs.get("verification_status", Company.VerificationStatus.PENDING),
+        )
+        profile, _ = RecruiterProfile.objects.get_or_create(user=recruiter, defaults={"company": company})
+        if profile.company_id != company.id:
+            profile.company = company
+            profile.save(update_fields=["company"])
+        return company, profile
+    return _create_company
 
 
 @pytest.fixture
 def pending_company(company_factory):
-    return company_factory()
+    company, _ = company_factory(name="Pending Tech Ltd", verification_status=Company.VerificationStatus.PENDING)
+    return company
 
 
 @pytest.fixture
-def pending_recruiter(recruiter_user, pending_company):
-    return RecruiterProfile.objects.create(
-        user=recruiter_user,
-        company=pending_company,
-        designation="Lead Technical Recruiter",
-        work_email="recruiter@techinnovations.com",
-    )
+def pending_recruiter(company_factory, recruiter_user):
+    _, profile = company_factory(name="Recruiter Corp", recruiter=recruiter_user, verification_status=Company.VerificationStatus.PENDING)
+    return profile
 
 
 @pytest.fixture
-def pending_alumni_profile(alumni_user):
-    return AlumniProfile.objects.create(
+def pending_alumni_profile(db, user_factory):
+    alumni_user = user_factory(role=User.Role.ALUMNI)
+    profile = AlumniProfile.objects.create(
         user=alumni_user,
-        department="School of Computing and Data Science",
-        degree_programme="B.Tech Computer Science",
-        graduation_year=2024,
-        current_company="Acme Corp",
+        department="Computer Science",
+        degree_programme="B.Tech",
+        graduation_year=2023,
+        current_company="Tech Solutions",
         designation="Software Engineer",
         industry="Technology",
+        is_open_to_referrals=True,
         verification_status=AlumniProfile.VerificationStatus.PENDING,
     )
+    return profile
