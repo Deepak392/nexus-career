@@ -1,0 +1,4181 @@
+openapi: 3.0.3
+info:
+  title: Nexus Career API
+  version: 1.0.0
+  description: Versioned REST API for Nexus Career. Only implemented and registered
+    routes are included.
+paths:
+  /api/v1/admin/alumni/{id}/verify/:
+    post:
+      operationId: api_v1_admin_alumni_verify_create
+      description: Allows authorized IPC administrators to review graduation proof
+        and make a verification decision for an alumnus profile. Updates verification
+        status, dispatches an audit event, and prevents unauthorized access.
+      summary: Verify or reject an alumnus profile
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniVerificationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid decision or disallowed status transition.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Unauthenticated request.
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: 'Forbidden: requester lacks IPC administrator role or
+                  self-verification.'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Alumnus profile not found.
+          description: ''
+  /api/v1/admin/alumni/pending/:
+    get:
+      operationId: api_v1_admin_alumni_pending_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlumniProfileList'
+          description: ''
+  /api/v1/admin/audit-logs/:
+    get:
+      operationId: api_v1_admin_audit_logs_list
+      description: |-
+        R4: Authorized audit trail viewing API.
+
+        Restricted to authorized IPC or System administrators.
+        Exposes actor, action, target, and timestamp without leaking secrets.
+        Supports filtering by action, target_type, and actor username.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogEntryList'
+          description: ''
+  /api/v1/admin/dashboard/metrics/:
+    get:
+      operationId: api_v1_admin_dashboard_metrics_retrieve
+      description: Retrieves aggregate placement workflow and platform KPI metrics.
+        Restricted to authorized IPC and System administrators.
+      summary: Get IPC Admin Dashboard Metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardMetrics'
+          description: Aggregated platform metrics successfully retrieved.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator role.'
+  /api/v1/admin/metrics/:
+    get:
+      operationId: api_v1_admin_metrics_retrieve
+      description: Retrieves aggregate placement workflow and platform KPI metrics.
+        Restricted to authorized IPC and System administrators.
+      summary: Get IPC Admin Dashboard Metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardMetrics'
+          description: Aggregated platform metrics successfully retrieved.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator role.'
+  /api/v1/admin/opportunities/{id}/approve/:
+    post:
+      operationId: api_v1_admin_opportunities_approve_create
+      description: 'R2: Approves a pending opportunity and emits recruiter notification
+        event.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+          description: ''
+  /api/v1/admin/opportunities/{id}/reject/:
+    post:
+      operationId: api_v1_admin_opportunities_reject_create
+      description: 'R2: Rejects a pending opportunity with mandatory reason and emits
+        recruiter event.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+          description: ''
+  /api/v1/admin/opportunities/pending/:
+    get:
+      operationId: api_v1_admin_opportunities_pending_list
+      description: Lists opportunities waiting for IPC approval.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOpportunityList'
+          description: ''
+  /api/v1/admin/recruiters/{id}/verify/:
+    post:
+      operationId: api_v1_admin_recruiters_verify_create
+      description: Allows authorized IPC administrators to review and make a verification
+        decision for an eligible recruiter. Updates the company verification status,
+        records the acting administrator and timestamp, and logs an audit record.
+      summary: Verify or reject a recruiter / company
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecruiterVerificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecruiterVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecruiterVerificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterVerificationResponse'
+          description: Verification decision successfully recorded.
+        '400':
+          description: Invalid verification status or disallowed status transition.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: requester lacks IPC administrator role or self-verification.'
+        '404':
+          description: Recruiter or associated company not found.
+  /api/v1/admin/recruiters/pending/:
+    get:
+      operationId: api_v1_admin_recruiters_pending_list
+      description: Lists companies pending IPC verification.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompanyProfileList'
+          description: ''
+  /api/v1/admin/reports/:
+    get:
+      operationId: api_v1_admin_reports_retrieve
+      description: Retrieves a paginated list of recruitment activities across the
+        platform. Supports filtering by date range (start_date, end_date), activity_type,
+        company, and status. Restricted to IPC and System administrators.
+      summary: List recruitment activity reports
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Filter by category (OPPORTUNITY, APPLICATION, COMPANY, USER).
+      - in: query
+        name: company
+        schema:
+          type: string
+        description: Filter by company name or ID.
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Filter up to ISO date (inclusive).
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number.
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page (max 50).
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Filter from ISO date (inclusive).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PUBLISHED, SUBMITTED, VERIFIED, etc.).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityReportItem'
+          description: ''
+        '400':
+          description: Invalid filter parameters or date range.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator.'
+  /api/v1/admin/reports/activity/:
+    get:
+      operationId: api_v1_admin_reports_activity_retrieve
+      description: Retrieves a paginated list of recruitment activities across the
+        platform. Supports filtering by date range (start_date, end_date), activity_type,
+        company, and status. Restricted to IPC and System administrators.
+      summary: List recruitment activity reports
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Filter by category (OPPORTUNITY, APPLICATION, COMPANY, USER).
+      - in: query
+        name: company
+        schema:
+          type: string
+        description: Filter by company name or ID.
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Filter up to ISO date (inclusive).
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number.
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page (max 50).
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Filter from ISO date (inclusive).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PUBLISHED, SUBMITTED, VERIFIED, etc.).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityReportItem'
+          description: ''
+        '400':
+          description: Invalid filter parameters or date range.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator.'
+  /api/v1/admin/reports/export/:
+    get:
+      operationId: api_v1_admin_reports_export_retrieve
+      description: Generates a downloadable CSV export of recruitment activity reports.
+        Supports filtering by date range (start_date, end_date), activity_type, company,
+        and status. Restricted to IPC and System administrators. Every export is recorded
+        in the administrative audit log.
+      summary: Export activity reports to CSV
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Filter by category (OPPORTUNITY, APPLICATION, COMPANY, USER).
+      - in: query
+        name: company
+        schema:
+          type: string
+        description: Filter by company name or ID.
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Filter up to ISO date (inclusive).
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Filter from ISO date (inclusive).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PUBLISHED, SUBMITTED, VERIFIED, etc.).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: CSV report file download.
+        '400':
+          description: Invalid filter parameters or date range.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator.'
+  /api/v1/admin/users/{id}/reactivate/:
+    post:
+      operationId: api_v1_admin_users_reactivate_create
+      description: |-
+        R3: Reactivates a suspended user account.
+
+        Restricted to authorized IPC administrators.
+        Reactivation of an active (non-suspended) account returns 400.
+      summary: Reactivate suspended user account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountActionResponse'
+          description: ''
+        '400':
+          description: User is not currently suspended.
+        '403':
+          description: Forbidden action.
+        '404':
+          description: User not found.
+  /api/v1/admin/users/{id}/suspend/:
+    post:
+      operationId: api_v1_admin_users_suspend_create
+      description: |-
+        R3: Suspends an active user account.
+
+        Restricted to authorized IPC administrators.
+        Enforces that administrators cannot suspend themselves, IPC admins cannot suspend
+        System Admins, and already suspended users return 400.
+      summary: Suspend user account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountActionResponse'
+          description: ''
+        '400':
+          description: Disallowed self-suspension or user already suspended.
+        '403':
+          description: Forbidden action on protected administrator account.
+        '404':
+          description: User not found.
+  /api/v1/alumni/graduation-proof/:
+    post:
+      operationId: alumni_graduation_proof_upload
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraduationProofUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GraduationProofUploadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GraduationProofUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+  /api/v1/alumni/ipc/{id}/{action}/:
+    post:
+      operationId: ipc_alumni_verification_action
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlumniVerificationActionRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+  /api/v1/alumni/ipc/{id}/proof/:
+    get:
+      operationId: ipc_alumni_graduation_proof_download
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/alumni/ipc/pending-verification/:
+    get:
+      operationId: api_v1_alumni_ipc_pending_verification_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlumniProfileList'
+          description: ''
+  /api/v1/alumni/metrics/:
+    get:
+      operationId: alumni_engagement_metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniEngagementMetrics'
+          description: ''
+  /api/v1/alumni/profile/:
+    get:
+      operationId: api_v1_alumni_profile_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+    post:
+      operationId: api_v1_alumni_profile_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+    put:
+      operationId: api_v1_alumni_profile_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlumniProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+    patch:
+      operationId: api_v1_alumni_profile_partial_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlumniProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlumniProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlumniProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlumniProfile'
+          description: ''
+  /api/v1/alumni/referral-requests/:
+    get:
+      operationId: alumni_referral_request_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReferralRequest'
+          description: ''
+    post:
+      operationId: alumni_referral_request_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferralRequest'
+          description: ''
+  /api/v1/alumni/referral-requests/{id}/:
+    get:
+      operationId: alumni_referral_request_detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferralRequest'
+          description: ''
+  /api/v1/alumni/referral-requests/{id}/{action}/:
+    post:
+      operationId: alumni_referral_request_action
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReferralRequestActionRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferralRequest'
+          description: ''
+  /api/v1/alumni/referral-requests/{id}/resume/:
+    get:
+      operationId: alumni_referral_resume_download
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/alumni/search/:
+    get:
+      operationId: api_v1_alumni_search_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlumniSearchList'
+          description: ''
+  /api/v1/applications/:
+    get:
+      operationId: api_v1_applications_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApplicationList'
+          description: ''
+    post:
+      operationId: api_v1_applications_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+          description: ''
+  /api/v1/applications/{id}/:
+    get:
+      operationId: api_v1_applications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+          description: ''
+  /api/v1/applications/{id}/status/:
+    post:
+      operationId: api_v1_applications_status_create
+      description: Update application status through permitted lifecycle states. Enforces
+        role-based permissions and emits status change notifications.
+      summary: Transition application status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this application.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+          description: ''
+    patch:
+      operationId: api_v1_applications_status_partial_update
+      description: Update application status through permitted lifecycle states. Enforces
+        role-based permissions and emits status change notifications.
+      summary: Transition application status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this application.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: api_v1_auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: api_v1_auth_logout_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '205':
+          description: Logout successful.
+        '400':
+          description: Missing, invalid, or expired token.
+        '403':
+          description: Token belongs to another user.
+  /api/v1/auth/me/:
+    get:
+      operationId: api_v1_auth_me_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/v1/auth/password-reset/:
+    post:
+      operationId: api_v1_auth_password_reset_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: A generic response is returned whether or not the email address
+            belongs to an active account.
+        '400':
+          description: Invalid email address.
+        '429':
+          description: Too many reset requests.
+  /api/v1/auth/password-reset/confirm/:
+    post:
+      operationId: api_v1_auth_password_reset_confirm_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: Password updated successfully.
+        '400':
+          description: Invalid, expired, or already-used reset link.
+        '429':
+          description: Too many password reset attempts.
+  /api/v1/auth/refresh/:
+    post:
+      operationId: api_v1_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: api_v1_auth_register_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/v1/health/:
+    get:
+      operationId: api_v1_health_retrieve
+      description: Public liveness check confirming the backend is up. Requires no
+        authentication.
+      summary: Service health check
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+          description: ''
+  /api/v1/ipc/audit-logs/:
+    get:
+      operationId: api_v1_ipc_audit_logs_list
+      description: |-
+        R4: Authorized audit trail viewing API.
+
+        Restricted to authorized IPC or System administrators.
+        Exposes actor, action, target, and timestamp without leaking secrets.
+        Supports filtering by action, target_type, and actor username.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogEntryList'
+          description: ''
+  /api/v1/ipc/companies/{id}/reject/:
+    post:
+      operationId: api_v1_ipc_companies_reject_create
+      description: IPC endpoint to reject a company directly by primary key.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+          description: ''
+  /api/v1/ipc/companies/{id}/verify/:
+    post:
+      operationId: api_v1_ipc_companies_verify_create
+      description: IPC endpoint to verify a company directly by primary key.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+          description: ''
+  /api/v1/ipc/companies/pending/:
+    get:
+      operationId: api_v1_ipc_companies_pending_list
+      description: Lists companies pending IPC verification.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompanyProfileList'
+          description: ''
+  /api/v1/ipc/dashboard/metrics/:
+    get:
+      operationId: api_v1_ipc_dashboard_metrics_retrieve
+      description: Retrieves aggregate placement workflow and platform KPI metrics.
+        Restricted to authorized IPC and System administrators.
+      summary: Get IPC Admin Dashboard Metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardMetrics'
+          description: Aggregated platform metrics successfully retrieved.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator role.'
+  /api/v1/ipc/opportunities/{id}/approve/:
+    post:
+      operationId: api_v1_ipc_opportunities_approve_create
+      description: 'R2: Approves a pending opportunity and emits recruiter notification
+        event.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+          description: ''
+  /api/v1/ipc/opportunities/{id}/reject/:
+    post:
+      operationId: api_v1_ipc_opportunities_reject_create
+      description: 'R2: Rejects a pending opportunity with mandatory reason and emits
+        recruiter event.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectionReasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+          description: ''
+  /api/v1/ipc/opportunities/pending/:
+    get:
+      operationId: api_v1_ipc_opportunities_pending_list
+      description: Lists opportunities waiting for IPC approval.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOpportunityList'
+          description: ''
+  /api/v1/ipc/reports/:
+    get:
+      operationId: api_v1_ipc_reports_retrieve
+      description: Retrieves a paginated list of recruitment activities across the
+        platform. Supports filtering by date range (start_date, end_date), activity_type,
+        company, and status. Restricted to IPC and System administrators.
+      summary: List recruitment activity reports
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Filter by category (OPPORTUNITY, APPLICATION, COMPANY, USER).
+      - in: query
+        name: company
+        schema:
+          type: string
+        description: Filter by company name or ID.
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Filter up to ISO date (inclusive).
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number.
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page (max 50).
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Filter from ISO date (inclusive).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PUBLISHED, SUBMITTED, VERIFIED, etc.).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityReportItem'
+          description: ''
+        '400':
+          description: Invalid filter parameters or date range.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator.'
+  /api/v1/ipc/reports/export/:
+    get:
+      operationId: api_v1_ipc_reports_export_retrieve
+      description: Generates a downloadable CSV export of recruitment activity reports.
+        Supports filtering by date range (start_date, end_date), activity_type, company,
+        and status. Restricted to IPC and System administrators. Every export is recorded
+        in the administrative audit log.
+      summary: Export activity reports to CSV
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Filter by category (OPPORTUNITY, APPLICATION, COMPANY, USER).
+      - in: query
+        name: company
+        schema:
+          type: string
+        description: Filter by company name or ID.
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Filter up to ISO date (inclusive).
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Filter from ISO date (inclusive).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PUBLISHED, SUBMITTED, VERIFIED, etc.).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: CSV report file download.
+        '400':
+          description: Invalid filter parameters or date range.
+        '401':
+          description: Unauthenticated request.
+        '403':
+          description: 'Forbidden: Requires IPC or System administrator.'
+  /api/v1/ipc/users/{id}/reactivate/:
+    post:
+      operationId: api_v1_ipc_users_reactivate_create
+      description: |-
+        R3: Reactivates a suspended user account.
+
+        Restricted to authorized IPC administrators.
+        Reactivation of an active (non-suspended) account returns 400.
+      summary: Reactivate suspended user account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountActionResponse'
+          description: ''
+        '400':
+          description: User is not currently suspended.
+        '403':
+          description: Forbidden action.
+        '404':
+          description: User not found.
+  /api/v1/ipc/users/{id}/suspend/:
+    post:
+      operationId: api_v1_ipc_users_suspend_create
+      description: |-
+        R3: Suspends an active user account.
+
+        Restricted to authorized IPC administrators.
+        Enforces that administrators cannot suspend themselves, IPC admins cannot suspend
+        System Admins, and already suspended users return 400.
+      summary: Suspend user account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserSuspensionRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountActionResponse'
+          description: ''
+        '400':
+          description: Disallowed self-suspension or user already suspended.
+        '403':
+          description: Forbidden action on protected administrator account.
+        '404':
+          description: User not found.
+  /api/v1/notifications/:
+    get:
+      operationId: api_v1_notifications_list
+      description: Authenticated users can only read and acknowledge their own notifications.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/notifications/{id}/:
+    get:
+      operationId: api_v1_notifications_retrieve
+      description: Authenticated users can only read and acknowledge their own notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/{id}/read/:
+    post:
+      operationId: api_v1_notifications_read_create
+      description: Authenticated users can only read and acknowledge their own notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/opportunities/:
+    get:
+      operationId: api_v1_opportunities_list
+      description: Public discovery exposes published, unexpired opportunities only.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOpportunityList'
+          description: ''
+  /api/v1/opportunities/{id}/:
+    get:
+      operationId: api_v1_opportunities_retrieve
+      description: Public discovery exposes published, unexpired opportunities only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this opportunity.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+          description: ''
+  /api/v1/opportunities/{id}/applications/:
+    get:
+      operationId: api_v1_opportunities_applications_retrieve
+      description: Retrieve all student applications for an opportunity. Scoped to
+        the opportunity's recruiter and IPC admins.
+      summary: List applicants for an opportunity
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityApplicantsResponse'
+          description: ''
+  /api/v1/opportunities/{id}/eligibility/:
+    get:
+      operationId: api_v1_opportunities_eligibility_retrieve
+      description: Compare the authenticated student's profile with the published
+        opportunity criteria. Missing information is returned separately from unmet
+        requirements.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityEligibilityResult'
+          description: ''
+  /api/v1/recruiters/company/:
+    get:
+      operationId: api_v1_recruiters_company_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+          description: ''
+    post:
+      operationId: api_v1_recruiters_company_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+          description: ''
+    patch:
+      operationId: api_v1_recruiters_company_partial_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+          description: ''
+  /api/v1/recruiters/opportunities/:
+    get:
+      operationId: api_v1_recruiters_opportunities_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecruiterOpportunityList'
+          description: ''
+    post:
+      operationId: api_v1_recruiters_opportunities_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/recruiters/opportunities/{id}/:
+    get:
+      operationId: api_v1_recruiters_opportunities_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+    patch:
+      operationId: api_v1_recruiters_opportunities_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRecruiterOpportunityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRecruiterOpportunityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRecruiterOpportunityRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/recruiters/opportunities/{id}/applications/:
+    get:
+      operationId: api_v1_recruiters_opportunities_applications_retrieve
+      description: List all student applications submitted to this opportunity. Scoped
+        to recruiter's company.
+      summary: List applications for opportunity
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/recruiters/opportunities/{id}/archive/:
+    post:
+      operationId: api_v1_recruiters_opportunities_archive_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/recruiters/opportunities/{id}/close/:
+    post:
+      operationId: api_v1_recruiters_opportunities_close_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/recruiters/opportunities/{id}/submit/:
+    post:
+      operationId: api_v1_recruiters_opportunities_submit_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecruiterOpportunityRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterOpportunity'
+          description: ''
+  /api/v1/students/profile/:
+    get:
+      operationId: api_v1_students_profile_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentProfile'
+          description: ''
+    post:
+      operationId: api_v1_students_profile_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentProfile'
+          description: ''
+    put:
+      operationId: api_v1_students_profile_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentProfile'
+          description: ''
+    patch:
+      operationId: api_v1_students_profile_partial_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentProfile'
+          description: ''
+components:
+  schemas:
+    ActivityReportItem:
+      type: object
+      description: 'R6: Serializer for an individual recruitment activity report record.'
+      properties:
+        id:
+          type: string
+          description: Unique event or activity identifier.
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC timestamp of the activity.
+        activity_type:
+          type: string
+          description: Category of activity (e.g. OPPORTUNITY, APPLICATION, COMPANY,
+            USER).
+        action:
+          type: string
+          description: Action descriptor (e.g. OPPORTUNITY_APPROVED, APPLICATION_SUBMITTED).
+        actor:
+          type: string
+          description: Username of the user who performed the activity.
+        company:
+          type: string
+          default: ''
+          description: Associated company name.
+        target_type:
+          type: string
+          description: Target entity model or type.
+        target_id:
+          type: string
+          description: Identifier of the target entity.
+        status:
+          type: string
+          default: ''
+          description: Status outcome of the activity.
+        details:
+          type: object
+          additionalProperties: {}
+          description: Contextual metadata or details.
+      required:
+      - action
+      - activity_type
+      - actor
+      - id
+      - target_id
+      - target_type
+      - timestamp
+    AdminDashboardMetrics:
+      type: object
+      properties:
+        active_opportunities:
+          type: integer
+          description: Number of published opportunities currently open for applications.
+        students:
+          type: integer
+          description: Total number of active student accounts.
+        verified_recruiters:
+          type: integer
+          description: Number of verified companies or recruiters.
+        applications:
+          type: integer
+          description: Total number of student applications submitted.
+        pending_approvals:
+          type: integer
+          description: Number of opportunities awaiting IPC approval.
+        total_opportunities:
+          type: integer
+          description: Total number of all opportunities across all lifecycle states.
+        pending_companies:
+          type: integer
+          description: Number of companies pending IPC verification.
+        verified_alumni:
+          type: integer
+          description: Number of verified alumni profiles.
+      required:
+      - active_opportunities
+      - applications
+      - pending_approvals
+      - students
+      - verified_recruiters
+    AlumniEngagementMetrics:
+      type: object
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        accepted:
+          type: integer
+        referred:
+          type: integer
+        declined:
+          type: integer
+        student_interactions:
+          type: integer
+        is_open_to_referrals:
+          type: boolean
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatusEnum'
+      required:
+      - accepted
+      - declined
+      - is_open_to_referrals
+      - pending
+      - referred
+      - student_interactions
+      - total
+      - verification_status
+    AlumniProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        department:
+          type: string
+          maxLength: 100
+        degree_programme:
+          type: string
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        current_company:
+          type: string
+          maxLength: 150
+        designation:
+          type: string
+          maxLength: 150
+        industry:
+          type: string
+          maxLength: 100
+        is_open_to_referrals:
+          type: boolean
+        verification_status:
+          allOf:
+          - $ref: '#/components/schemas/VerificationStatusEnum'
+          readOnly: true
+        verification_rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        has_graduation_proof:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - degree_programme
+      - department
+      - email
+      - full_name
+      - graduation_year
+      - has_graduation_proof
+      - id
+      - updated_at
+      - username
+      - verification_rejection_reason
+      - verification_status
+      - verified_at
+    AlumniProfileRequest:
+      type: object
+      properties:
+        department:
+          type: string
+          minLength: 1
+          maxLength: 100
+        degree_programme:
+          type: string
+          minLength: 1
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        current_company:
+          type: string
+          maxLength: 150
+        designation:
+          type: string
+          maxLength: 150
+        industry:
+          type: string
+          maxLength: 100
+        is_open_to_referrals:
+          type: boolean
+      required:
+      - degree_programme
+      - department
+      - graduation_year
+    AlumniSearch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        department:
+          type: string
+          maxLength: 100
+        degree_programme:
+          type: string
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        current_company:
+          type: string
+          maxLength: 150
+        designation:
+          type: string
+          maxLength: 150
+        industry:
+          type: string
+          maxLength: 100
+        is_open_to_referrals:
+          type: boolean
+      required:
+      - degree_programme
+      - department
+      - full_name
+      - graduation_year
+      - id
+    AlumniVerificationActionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+    AlumniVerificationRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status708Enum'
+        rejection_reason:
+          type: string
+          maxLength: 1000
+      required:
+      - status
+    AlumniVerificationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        username:
+          type: string
+        verification_status:
+          type: string
+        department:
+          type: string
+        degree_programme:
+          type: string
+        graduation_year:
+          type: integer
+        graduation_proof:
+          type: string
+          nullable: true
+        rejection_reason:
+          type: string
+        verified_by:
+          type: integer
+          nullable: true
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - degree_programme
+      - department
+      - graduation_proof
+      - graduation_year
+      - id
+      - rejection_reason
+      - updated_at
+      - user_id
+      - username
+      - verification_status
+      - verified_at
+      - verified_by
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        opportunity_id:
+          type: integer
+          readOnly: true
+        opportunity_title:
+          type: string
+          readOnly: true
+        company_name:
+          type: string
+          readOnly: true
+        opportunity_type:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status3cbEnum'
+          readOnly: true
+        eligibility_snapshot:
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationStatusHistory'
+          readOnly: true
+      required:
+      - company_name
+      - eligibility_snapshot
+      - id
+      - opportunity_id
+      - opportunity_title
+      - opportunity_type
+      - status
+      - status_history
+      - submitted_at
+      - updated_at
+    ApplicationMethod1b8Enum:
+      enum:
+      - PLATFORM
+      - EXTERNAL
+      type: string
+      description: |-
+        * `PLATFORM` - Platform
+        * `EXTERNAL` - External Link
+    ApplicationStatusHistory:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status3cbEnum'
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        changed_by_username:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - changed_by_username
+      - created_at
+      - note
+      - status
+    ApplicationStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status3cbEnum'
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - status
+    AuditLogActor:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+      required:
+      - email
+      - id
+      - role
+      - username
+    AuditLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        actor:
+          $ref: '#/components/schemas/AuditLogActor'
+        action:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: integer
+        target:
+          type: string
+        details:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - action
+      - actor
+      - created_at
+      - details
+      - id
+      - target
+      - target_id
+      - target_type
+    BlankEnum:
+      enum:
+      - ''
+    CompanyProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        website:
+          type: string
+          format: uri
+          maxLength: 200
+        industry:
+          type: string
+          maxLength: 100
+        contact_email:
+          type: string
+          format: email
+          maxLength: 254
+        contact_phone:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+        verification_status:
+          allOf:
+          - $ref: '#/components/schemas/VerificationStatusEnum'
+          readOnly: true
+        verification_rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - contact_email
+      - created_at
+      - id
+      - industry
+      - name
+      - updated_at
+      - verification_rejection_reason
+      - verification_status
+      - verified_at
+    CompanyProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        website:
+          type: string
+          format: uri
+          maxLength: 200
+        industry:
+          type: string
+          minLength: 1
+          maxLength: 100
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        contact_phone:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+      required:
+      - contact_email
+      - industry
+      - name
+    EventEnum:
+      enum:
+      - REQUESTED
+      - ACCEPTED
+      - DECLINED
+      - INFORMATION_REQUESTED
+      - STUDENT_RESPONSE
+      - REFERRED
+      type: string
+      description: |-
+        * `REQUESTED` - Requested
+        * `ACCEPTED` - Accepted
+        * `DECLINED` - Declined
+        * `INFORMATION_REQUESTED` - More information requested
+        * `STUDENT_RESPONSE` - Student response
+        * `REFERRED` - Referred
+    GraduationProofUploadRequest:
+      type: object
+      properties:
+        graduation_proof:
+          type: string
+          format: binary
+      required:
+      - graduation_proof
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          default: ok
+    LogoutRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    NewStatusEnum:
+      enum:
+      - PENDING
+      - ACCEPTED
+      - REFERRED
+      - DECLINED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `ACCEPTED` - Accepted
+        * `REFERRED` - Referred
+        * `DECLINED` - Declined
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        application_id:
+          type: integer
+          readOnly: true
+        referral_request_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - application_id
+      - created_at
+      - id
+      - message
+      - notification_type
+      - read_at
+      - referral_request_id
+      - title
+    NotificationTypeEnum:
+      enum:
+      - APPLICATION_SUBMITTED
+      - REFERRAL_REQUEST
+      - REFERRAL_STATUS
+      - REFERRAL_MORE_INFO
+      - OPPORTUNITY_APPROVED
+      - OPPORTUNITY_REJECTED
+      type: string
+      description: |-
+        * `APPLICATION_SUBMITTED` - Application submitted
+        * `REFERRAL_REQUEST` - New referral request
+        * `REFERRAL_STATUS` - Referral request update
+        * `REFERRAL_MORE_INFO` - More information requested
+        * `OPPORTUNITY_APPROVED` - Opportunity approved
+        * `OPPORTUNITY_REJECTED` - Opportunity rejected
+    Opportunity:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        company_name:
+          type: string
+          readOnly: true
+        created_by_username:
+          type: string
+          readOnly: true
+        opportunity_type:
+          allOf:
+          - $ref: '#/components/schemas/OpportunityTypeEnum'
+          readOnly: true
+        required_skills:
+          readOnly: true
+        eligibility_criteria:
+          readOnly: true
+        work_mode:
+          allOf:
+          - $ref: '#/components/schemas/WorkModeEnum'
+          readOnly: true
+        location:
+          type: string
+          readOnly: true
+        compensation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        application_deadline:
+          type: string
+          format: date-time
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        application_method:
+          allOf:
+          - $ref: '#/components/schemas/ApplicationMethod1b8Enum'
+          readOnly: true
+        external_application_url:
+          type: string
+          format: uri
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status21eEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - application_deadline
+      - application_method
+      - approved_at
+      - company_name
+      - compensation
+      - created_at
+      - created_by_username
+      - description
+      - eligibility_criteria
+      - external_application_url
+      - id
+      - location
+      - opportunity_type
+      - published_at
+      - rejection_reason
+      - required_skills
+      - start_date
+      - status
+      - title
+      - updated_at
+      - work_mode
+    OpportunityApplicantsResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - count
+      - results
+    OpportunityEligibilityResult:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OpportunityEligibilityResultStatusEnum'
+        eligible:
+          type: boolean
+          nullable: true
+        checks:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        reasons:
+          type: array
+          items:
+            type: string
+        missing_fields:
+          type: array
+          items:
+            type: string
+        has_resume:
+          type: boolean
+        resume_required:
+          type: boolean
+        application_method:
+          $ref: '#/components/schemas/OpportunityEligibilityResultApplicationMethodEnum'
+        external_application_url:
+          type: string
+        ready_to_apply:
+          type: boolean
+        resume_message:
+          type: string
+        already_applied:
+          type: boolean
+      required:
+      - already_applied
+      - application_method
+      - checks
+      - eligible
+      - external_application_url
+      - has_resume
+      - missing_fields
+      - ready_to_apply
+      - reasons
+      - resume_message
+      - resume_required
+      - status
+    OpportunityEligibilityResultApplicationMethodEnum:
+      enum:
+      - PLATFORM
+      - EXTERNAL
+      type: string
+      description: |-
+        * `PLATFORM` - PLATFORM
+        * `EXTERNAL` - EXTERNAL
+    OpportunityEligibilityResultStatusEnum:
+      enum:
+      - ELIGIBLE
+      - INELIGIBLE
+      - INCOMPLETE_PROFILE
+      type: string
+      description: |-
+        * `ELIGIBLE` - ELIGIBLE
+        * `INELIGIBLE` - INELIGIBLE
+        * `INCOMPLETE_PROFILE` - INCOMPLETE_PROFILE
+    OpportunityTypeEnum:
+      enum:
+      - JOB
+      - INTERNSHIP
+      type: string
+      description: |-
+        * `JOB` - Job
+        * `INTERNSHIP` - Internship
+    PaginatedAlumniProfileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlumniProfile'
+    PaginatedAlumniSearchList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlumniSearch'
+    PaginatedApplicationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Application'
+    PaginatedAuditLogEntryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+    PaginatedCompanyProfileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanyProfile'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedOpportunityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+    PaginatedRecruiterOpportunityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecruiterOpportunity'
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
+      - token
+      - uid
+    PasswordResetRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    PatchedAlumniProfileRequest:
+      type: object
+      properties:
+        department:
+          type: string
+          minLength: 1
+          maxLength: 100
+        degree_programme:
+          type: string
+          minLength: 1
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        current_company:
+          type: string
+          maxLength: 150
+        designation:
+          type: string
+          maxLength: 150
+        industry:
+          type: string
+          maxLength: 100
+        is_open_to_referrals:
+          type: boolean
+    PatchedApplicationStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status3cbEnum'
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+    PatchedCompanyProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        website:
+          type: string
+          format: uri
+          maxLength: 200
+        industry:
+          type: string
+          minLength: 1
+          maxLength: 100
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        contact_phone:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+    PatchedRecruiterOpportunityRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+        opportunity_type:
+          $ref: '#/components/schemas/OpportunityTypeEnum'
+        required_skills:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        eligibility_criteria: {}
+        work_mode:
+          $ref: '#/components/schemas/WorkModeEnum'
+        location:
+          type: string
+          minLength: 1
+          maxLength: 200
+        compensation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        application_deadline:
+          type: string
+          format: date-time
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        application_method:
+          $ref: '#/components/schemas/ApplicationMethod1b8Enum'
+        external_application_url:
+          type: string
+          format: uri
+          maxLength: 200
+    PatchedStudentProfileRequest:
+      type: object
+      properties:
+        student_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        department:
+          type: string
+          minLength: 1
+          maxLength: 100
+        degree_programme:
+          type: string
+          minLength: 1
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        cgpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        areas_of_interest:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        experience:
+          type: string
+        preferred_roles:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        preferred_locations:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        work_mode:
+          oneOf:
+          - $ref: '#/components/schemas/WorkModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        resume:
+          type: string
+          format: binary
+          writeOnly: true
+        remove_resume:
+          type: boolean
+          writeOnly: true
+          default: false
+    RecruiterOpportunity:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        company_name:
+          type: string
+          readOnly: true
+        created_by_username:
+          type: string
+          readOnly: true
+        opportunity_type:
+          $ref: '#/components/schemas/OpportunityTypeEnum'
+        required_skills:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        eligibility_criteria: {}
+        work_mode:
+          $ref: '#/components/schemas/WorkModeEnum'
+        location:
+          type: string
+          maxLength: 200
+        compensation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        application_deadline:
+          type: string
+          format: date-time
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        application_method:
+          $ref: '#/components/schemas/ApplicationMethod1b8Enum'
+        external_application_url:
+          type: string
+          format: uri
+          maxLength: 200
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status21eEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - application_deadline
+      - approved_at
+      - company_name
+      - created_at
+      - created_by_username
+      - description
+      - id
+      - location
+      - opportunity_type
+      - published_at
+      - rejection_reason
+      - status
+      - title
+      - updated_at
+      - work_mode
+    RecruiterOpportunityRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+        opportunity_type:
+          $ref: '#/components/schemas/OpportunityTypeEnum'
+        required_skills:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        eligibility_criteria: {}
+        work_mode:
+          $ref: '#/components/schemas/WorkModeEnum'
+        location:
+          type: string
+          minLength: 1
+          maxLength: 200
+        compensation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        application_deadline:
+          type: string
+          format: date-time
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        application_method:
+          $ref: '#/components/schemas/ApplicationMethod1b8Enum'
+        external_application_url:
+          type: string
+          format: uri
+          maxLength: 200
+      required:
+      - application_deadline
+      - description
+      - location
+      - opportunity_type
+      - title
+      - work_mode
+    RecruiterVerificationRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status708Enum'
+        rejection_reason:
+          type: string
+          maxLength: 1000
+      required:
+      - status
+    RecruiterVerificationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        recruiter_username:
+          type: string
+        company_id:
+          type: integer
+        company_name:
+          type: string
+        verification_status:
+          type: string
+        verified_by:
+          type: integer
+          nullable: true
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        rejection_reason:
+          type: string
+      required:
+      - company_id
+      - company_name
+      - id
+      - recruiter_username
+      - rejection_reason
+      - verification_status
+      - verified_at
+      - verified_by
+    ReferralRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        student_username:
+          type: string
+          readOnly: true
+        student_name:
+          type: string
+          readOnly: true
+        student_department:
+          type: string
+          readOnly: true
+        student_graduation_year:
+          type: string
+          readOnly: true
+        alumni_name:
+          type: string
+          readOnly: true
+        alumni_company:
+          type: string
+          readOnly: true
+        alumni_designation:
+          type: string
+          readOnly: true
+        opportunity_url:
+          type: string
+          format: uri
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        has_resume:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/NewStatusEnum'
+          readOnly: true
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferralRequestHistory'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alumni_company
+      - alumni_designation
+      - alumni_name
+      - created_at
+      - has_resume
+      - history
+      - id
+      - note
+      - opportunity_url
+      - status
+      - student_department
+      - student_graduation_year
+      - student_name
+      - student_username
+      - updated_at
+    ReferralRequestActionRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 1000
+    ReferralRequestCreateRequest:
+      type: object
+      properties:
+        alumni_profile_id:
+          type: integer
+          minimum: 1
+        opportunity_url:
+          type: string
+          format: uri
+          minLength: 1
+          maxLength: 500
+        resume:
+          type: string
+          format: binary
+        note:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+      - alumni_profile_id
+      - note
+      - opportunity_url
+      - resume
+    ReferralRequestHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          allOf:
+          - $ref: '#/components/schemas/EventEnum'
+          readOnly: true
+        previous_status:
+          allOf:
+          - $ref: '#/components/schemas/NewStatusEnum'
+          readOnly: true
+        new_status:
+          allOf:
+          - $ref: '#/components/schemas/NewStatusEnum'
+          readOnly: true
+        changed_by_username:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - changed_by_username
+      - created_at
+      - event
+      - id
+      - new_status
+      - note
+      - previous_status
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/RegisterRoleEnum'
+        department:
+          type: string
+          maxLength: 100
+        degree_programme:
+          type: string
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 2026
+          minimum: 1900
+      required:
+      - email
+      - password
+      - role
+      - username
+    RegisterRoleEnum:
+      enum:
+      - STUDENT
+      - ALUMNI
+      - RECRUITER
+      type: string
+      description: |-
+        * `STUDENT` - Student
+        * `ALUMNI` - Alumni
+        * `RECRUITER` - Recruiter
+    RejectionReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 2000
+      required:
+      - reason
+    Status21eEnum:
+      enum:
+      - DRAFT
+      - PENDING_APPROVAL
+      - PUBLISHED
+      - REJECTED
+      - CLOSED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PENDING_APPROVAL` - Pending Approval
+        * `PUBLISHED` - Published
+        * `REJECTED` - Rejected
+        * `CLOSED` - Closed
+        * `ARCHIVED` - Archived
+    Status3cbEnum:
+      enum:
+      - SUBMITTED
+      - UNDER_REVIEW
+      - SHORTLISTED
+      - SELECTED
+      - REJECTED
+      - WITHDRAWN
+      type: string
+      description: |-
+        * `SUBMITTED` - Submitted
+        * `UNDER_REVIEW` - Under review
+        * `SHORTLISTED` - Shortlisted
+        * `SELECTED` - Selected
+        * `REJECTED` - Rejected
+        * `WITHDRAWN` - Withdrawn
+    Status708Enum:
+      enum:
+      - VERIFIED
+      - REJECTED
+      type: string
+      description: |-
+        * `VERIFIED` - VERIFIED
+        * `REJECTED` - REJECTED
+    StudentProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        student_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        department:
+          type: string
+          maxLength: 100
+        degree_programme:
+          type: string
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        cgpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        areas_of_interest:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        experience:
+          type: string
+        preferred_roles:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        preferred_locations:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        work_mode:
+          oneOf:
+          - $ref: '#/components/schemas/WorkModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        has_resume:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - degree_programme
+      - department
+      - graduation_year
+      - has_resume
+      - id
+      - updated_at
+    StudentProfileRequest:
+      type: object
+      properties:
+        student_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        department:
+          type: string
+          minLength: 1
+          maxLength: 100
+        degree_programme:
+          type: string
+          minLength: 1
+          maxLength: 100
+        graduation_year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        cgpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        areas_of_interest:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        experience:
+          type: string
+        preferred_roles:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        preferred_locations:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+        work_mode:
+          oneOf:
+          - $ref: '#/components/schemas/WorkModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        resume:
+          type: string
+          format: binary
+          writeOnly: true
+        remove_resume:
+          type: boolean
+          writeOnly: true
+          default: false
+      required:
+      - degree_programme
+      - department
+      - graduation_year
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserAccountActionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        action:
+          type: string
+        performed_by:
+          type: integer
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      required:
+      - action
+      - email
+      - id
+      - is_active
+      - is_verified
+      - performed_by
+      - reason
+      - role
+      - timestamp
+      - username
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/UserProfileRoleEnum'
+          readOnly: true
+        is_verified:
+          type: boolean
+          readOnly: true
+      required:
+      - email
+      - id
+      - is_verified
+      - role
+      - username
+    UserProfileRoleEnum:
+      enum:
+      - STUDENT
+      - RECRUITER
+      - IPC_ADMIN
+      - ALUMNI
+      - SYSTEM_ADMIN
+      type: string
+      description: |-
+        * `STUDENT` - Student
+        * `RECRUITER` - Recruiter
+        * `IPC_ADMIN` - IPC Administrator
+        * `ALUMNI` - Alumni
+        * `SYSTEM_ADMIN` - System Administrator
+    UserSuspensionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+    VerificationStatusEnum:
+      enum:
+      - PENDING
+      - VERIFIED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `VERIFIED` - Verified
+        * `REJECTED` - Rejected
+    WorkModeEnum:
+      enum:
+      - ONSITE
+      - HYBRID
+      - REMOTE
+      type: string
+      description: |-
+        * `ONSITE` - On-site
+        * `HYBRID` - Hybrid
+        * `REMOTE` - Remote
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
