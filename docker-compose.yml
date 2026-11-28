@@ -20,13 +20,16 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py seed_demo &&
+             python manage.py runserver 0.0.0.0:8000"
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-change-this-to-a-random-secret-of-at-least-50-characters}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nexus.local}
       STUDENT_EMAIL_DOMAIN: ${STUDENT_EMAIL_DOMAIN:-scds.saiuniversity.edu.in}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-}
       EMAIL_HOST: ${EMAIL_HOST:-}
@@ -37,6 +40,7 @@ services:
       EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-10}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@nexus-career.local}
       PASSWORD_RESET_TIMEOUT: ${PASSWORD_RESET_TIMEOUT:-1800}
+      PRIVATE_MEDIA_ROOT: ${PRIVATE_MEDIA_ROOT:-/var/lib/nexus/private_media}
       PGDATABASE: nexus_career
       PGUSER: nexus_user
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
@@ -46,21 +50,32 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - private_media_data:/app/private_media
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   nexus_postgres_data:
+  private_media_data:

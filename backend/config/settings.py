@@ -5,6 +5,7 @@ Django settings for Nexus Career.
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
@@ -36,6 +37,22 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        ",".join(CORS_ALLOWED_ORIGINS),
+    ).split(",")
+    if origin.strip()
+]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = int(
+    os.getenv("DJANGO_SECURE_HSTS_SECONDS", "31536000" if not DEBUG else "0")
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -89,17 +106,40 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {
-    "default": {
+def _build_database_config() -> dict:
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if database_url:
+        parsed = urlparse(database_url)
+        query = parse_qs(parsed.query)
+        db_config: dict = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(parsed.path.lstrip("/")) or "nexus_career",
+            "USER": unquote(parsed.username or "") or "nexus_user",
+            "PASSWORD": unquote(parsed.password or ""),
+            "HOST": parsed.hostname or "127.0.0.1",
+            "PORT": str(parsed.port or 5432),
+            "CONN_MAX_AGE": 60,
+        }
+        sslmode = (query.get("sslmode") or [os.environ.get("PGSSLMODE", "")])[0]
+        if sslmode:
+            db_config["OPTIONS"] = {"sslmode": sslmode}
+        return db_config
+
+    db_config = {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("PGDATABASE", "nexus_career"),
-        "USER": os.environ.get("PGUSER", "postgres"),
-        "PASSWORD": os.environ.get("PGPASSWORD", ""),
-        "HOST": os.environ.get("PGHOST", "127.0.0.1"),
-        "PORT": os.environ.get("PGPORT", "5432"),
+        "NAME": os.environ.get("PGDATABASE") or os.environ.get("POSTGRES_DB", "nexus_career"),
+        "USER": os.environ.get("PGUSER") or os.environ.get("POSTGRES_USER", "nexus_user"),
+        "PASSWORD": os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD", ""),
+        "HOST": os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("PGPORT") or os.environ.get("POSTGRES_PORT", "5432"),
         "CONN_MAX_AGE": 60,
     }
-}
+    if os.environ.get("PGSSLMODE"):
+        db_config["OPTIONS"] = {"sslmode": os.environ["PGSSLMODE"]}
+    return db_config
+
+
+DATABASES = {"default": _build_database_config()}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
