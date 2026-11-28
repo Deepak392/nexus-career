@@ -12,9 +12,12 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from api.v1.health import HealthView
+
 urlpatterns = [
     # Django Admin
     path("admin/", admin.site.urls),
+    path("health/", HealthView.as_view(), name="root-health"),
 
     # Nexus Career API
     path("api/v1/", include("api.v1.urls")),

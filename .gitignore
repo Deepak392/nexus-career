@@ -25,4 +25,7 @@ backend/private_media/
 
 # IDE settings
 .vscode/
-backups/
+backups/backups/*.sql
+
+# Database Backups
+backups/*.sql

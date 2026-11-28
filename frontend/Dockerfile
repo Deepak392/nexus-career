@@ -1,11 +1,14 @@
 FROM node:25-alpine
 
 WORKDIR /app
+RUN chown node:node /app
 
-COPY package.json package-lock.json ./
+USER 1000
+
+COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci
 
-COPY . .
+COPY --chown=node:node . .
 
 EXPOSE 5173
 

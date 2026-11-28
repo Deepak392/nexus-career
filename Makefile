@@ -1,4 +1,4 @@
-.PHONY: up down build logs ps migrate makemigrations shell test clean
+.PHONY: up down build logs ps migrate makemigrations seed shell test clean backup restore verify-backup deploy-hosted verify-hosted
 
 up:
 	docker compose up --build
@@ -21,6 +21,9 @@ migrate:
 makemigrations:
 	docker compose exec backend python manage.py makemigrations
 
+seed:
+	docker compose exec backend python manage.py seed_demo
+
 shell:
 	docker compose exec backend python manage.py shell
 
@@ -38,3 +41,12 @@ backup:
 restore:
 	docker compose cp ./backups/latest.dump db:/tmp/backup.dump
 	docker compose exec -T db pg_restore -U nexus_user -d nexus_career --clean --if-exists /tmp/backup.dump
+
+verify-backup:
+	bash scripts/db-backup-restore.sh verify-compose
+
+deploy-hosted:
+	bash scripts/deploy-hosted.sh
+
+verify-hosted:
+	bash scripts/verify-hosted-availability.sh
